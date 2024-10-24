@@ -2,37 +2,28 @@ import streamlit as st
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 from fpdf import FPDF
-from dotenv import load_dotenv
-import os
 
-# Carregar variáveis do .env
-load_dotenv()
-
-# Lista de usuários permitidos
-USUARIOS_PERMITIDOS = {
-    os.getenv("USUARIO1"): os.getenv("SENHA1"),
-    os.getenv("USUARIO2"): os.getenv("SENHA2"),
-}
-
-# URL do MongoDB
-MONGODB_URL = os.getenv("MONGODB_URL")
 
 # Conectar ao MongoDB
 def criar_conexao():
     try:
-        client = MongoClient(MONGODB_URL)
-        db = client.extintores  # Nome do banco de dados ajustado
+        client = MongoClient(st.secrets["MONGO_URL"])
+        db = client.extintores  # Nome do banco de dados
         return db
     except Exception as e:
         st.error(f"Erro ao conectar ao MongoDB: {e}")
         return None
 
+
 def verificar_usuario(username, senha):
-    # Verifica se o usuário e a senha estão na lista de permitidos
-    if username in USUARIOS_PERMITIDOS and USUARIOS_PERMITIDOS[username] == senha:
-        return True
-    else:
-        return False
+    # Usuários permitidos
+    usuarios_permitidos = {
+        st.secrets["USUARIO1"]: st.secrets["SENHA1"],
+        st.secrets["USUARIO2"]: st.secrets["SENHA2"]
+    }
+
+    return usuarios_permitidos.get(username) == senha
+
 
 def cadastrar_empresa(nome_empresa, endereco, tipo_extintor, quantidade_extintor, capacidade_extintor, data_cadastro):
     db = criar_conexao()
@@ -53,6 +44,7 @@ def cadastrar_empresa(nome_empresa, endereco, tipo_extintor, quantidade_extintor
     except Exception as e:
         st.error(f"Erro ao cadastrar empresa: {e}")
 
+
 def excluir_empresa(nome_empresa):
     db = criar_conexao()
     if db is None:
@@ -68,6 +60,7 @@ def excluir_empresa(nome_empresa):
         st.rerun()
     except Exception as e:
         st.error(f"Erro ao excluir empresa: {e}")
+
 
 def gerar_relatorio_vencimento(data_inicio, data_fim):
     db = criar_conexao()
@@ -88,6 +81,7 @@ def gerar_relatorio_vencimento(data_inicio, data_fim):
             st.write("Nenhuma empresa com extintores próximos do vencimento.")
     except Exception as e:
         st.error(f"Erro ao gerar relatório: {e}")
+
 
 def gerar_pdf(empresas):
     class PDF(FPDF):
@@ -138,6 +132,7 @@ def gerar_pdf(empresas):
         )
     st.success("PDF gerado com sucesso!")
 
+
 def listar_empresas():
     db = criar_conexao()
     if db is None:
@@ -149,6 +144,7 @@ def listar_empresas():
     except Exception as e:
         st.error(f"Erro ao listar empresas: {e}")
         return []
+
 
 def tela_login():
     st.image('logo.png', width=100)  # Adicionando o logotipo
@@ -162,6 +158,7 @@ def tela_login():
             st.rerun()
         else:
             st.error("Usuário ou senha incorretos.")
+
 
 def tela_cadastro():
     st.header("Cadastro de Empresa")
@@ -181,6 +178,7 @@ def tela_cadastro():
         else:
             st.error("Por favor, preencha todos os campos obrigatórios.")
 
+
 def tela_relatorio():
     st.header("Gerar Relatório de Vencimento")
     data_inicio = st.date_input("Data de Início", datetime.now() - timedelta(days=365), key="data_inicio")
@@ -191,6 +189,7 @@ def tela_relatorio():
             gerar_relatorio_vencimento(data_inicio, data_fim)
         else:
             st.error("A data de início deve ser anterior à data de fim.")
+
 
 def tela_excluir_empresa():
     st.header("Excluir Empresa")
@@ -206,6 +205,7 @@ def tela_excluir_empresa():
     if st.button("Excluir Empresa"):
         excluir_empresa(nome_empresa)
 
+
 def menu_principal():
     st.sidebar.title("Menu")
     opcao = st.sidebar.selectbox("Escolha uma opção",
@@ -220,6 +220,7 @@ def menu_principal():
         listar_empresas()  # Corrigido aqui
     elif opcao == "Excluir Empresa":
         tela_excluir_empresa()
+
 
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
