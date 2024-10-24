@@ -14,7 +14,6 @@ def criar_conexao():
         return None
 
 def verificar_usuario(username, senha):
-    # Usuários permitidos
     usuarios_permitidos = {
         st.secrets["USUARIO1"]: st.secrets["SENHA1"],
         st.secrets["USUARIO2"]: st.secrets["SENHA2"]
@@ -27,16 +26,16 @@ def cadastrar_empresa(nome_empresa, endereco, tipo_extintor, quantidade_extintor
         return
 
     try:
-        # Converte a data para o formato ISO antes de armazenar
-        data_cadastro_iso = data_cadastro.isoformat()  # Formato: 'YYYY-MM-DD'
-
+        data_cadastro_iso = data_cadastro.isoformat()
+        usuario_atual = st.session_state['username']
         empresa = {
             "nome_empresa": nome_empresa,
             "endereco": endereco,
             "tipo_extintor": tipo_extintor,
             "quantidade_extintor": quantidade_extintor,
             "capacidade_extintor": capacidade_extintor,
-            "data_cadastro": data_cadastro_iso  # Armazenando como string ISO
+            "data_cadastro": data_cadastro_iso,
+            "usuario": usuario_atual
         }
         db.empresas.insert_one(empresa)
         st.success("Empresa cadastrada com sucesso!")
@@ -49,7 +48,9 @@ def gerar_relatorio_vencimento(data_inicio, data_fim):
         return
 
     try:
-        empresas = db.empresas.find({"data_cadastro": {"$gte": data_inicio.isoformat(), "$lte": data_fim.isoformat()}})
+        usuario_atual = st.session_state['username']
+        empresas = db.empresas.find({"data_cadastro": {"$gte": data_inicio.isoformat(), "$lte": data_fim.isoformat()},
+                                      "usuario": usuario_atual})
         empresas_list = list(empresas)
         if empresas_list:
             st.write("Empresas com extintores próximos do vencimento:")
@@ -96,7 +97,7 @@ def gerar_pdf(empresas):
             f"Tipo de Extintor: {empresa['tipo_extintor']}\n"
             f"Quantidade: {empresa['quantidade_extintor']}\n"
             f"Capacidade: {empresa['capacidade_extintor']}\n"
-            f"Data de Cadastro: {empresa['data_cadastro']}"  # Data já está em formato de string
+            f"Data de Cadastro: {empresa['data_cadastro']}"
         )
         pdf.chapter_body(body)
 
@@ -118,14 +119,30 @@ def listar_empresas():
         return []
 
     try:
-        empresas = db.empresas.find()
+        usuario_atual = st.session_state['username']
+        empresas = db.empresas.find({"usuario": usuario_atual})
         return list(empresas)
     except Exception as e:
         st.error(f"Erro ao listar empresas: {e}")
         return []
 
+def excluir_empresa(nome_empresa):
+    db = criar_conexao()
+    if db is None:
+        return
+
+    try:
+        usuario_atual = st.session_state['username']
+        result = db.empresas.delete_one({"nome_empresa": nome_empresa, "usuario": usuario_atual})  # Excluir apenas se for do usuário atual
+        if result.deleted_count > 0:
+            st.success("Empresa excluída com sucesso!")
+        else:
+            st.error("Erro: Empresa não encontrada ou não pertence ao usuário.")
+    except Exception as e:
+        st.error(f"Erro ao excluir empresa: {e}")
+
 def tela_login():
-    st.image('logo.png', width=100)  # Adicionando o logotipo
+    st.image('logo.png', width=100)
     st.title("Login no Meu App")
     username = st.text_input("Usuário", key="username")
     senha = st.text_input("Senha", type="password", key="senha")
@@ -133,9 +150,15 @@ def tela_login():
     if st.button("Login"):
         if verificar_usuario(username, senha):
             st.session_state['logged_in'] = True
+            st.session_state['username'] = username
             st.rerun()
         else:
             st.error("Usuário ou senha incorretos.")
+
+def sair():
+    st.session_state['logged_in'] = False
+    st.session_state.pop('username', None)
+    st.experimental_rerun()
 
 def menu_principal():
     st.sidebar.title("Menu")
@@ -147,9 +170,19 @@ def menu_principal():
     elif opcao == "Gerar Relatório de Vencimento":
         tela_relatorio()
     elif opcao == "Listar Empresas Cadastradas":
-        listar_empresas()
+        empresas = listar_empresas()
+        if empresas:
+            for empresa in empresas:
+                st.write(
+                    f"Nome: {empresa['nome_empresa']}, Endereço: {empresa['endereco']}, Tipo de Extintor: {empresa['tipo_extintor']}, Quantidade: {empresa['quantidade_extintor']}, Capacidade: {empresa['capacidade_extintor']}, Data de Cadastro: {empresa['data_cadastro']}"
+                )
+        else:
+            st.write("Nenhuma empresa cadastrada.")
     elif opcao == "Excluir Empresa":
         tela_excluir_empresa()
+
+    if st.button("Sair"):
+        sair()
 
 def tela_cadastro():
     st.header("Cadastro de Empresa")
