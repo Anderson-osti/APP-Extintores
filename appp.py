@@ -27,7 +27,7 @@ def cadastrar_empresa(nome_empresa, endereco, tipo_extintor, quantidade_extintor
 
     try:
         data_cadastro_iso = data_cadastro.isoformat()
-        usuario_atual = st.session_state['username']
+        usuario_atual = st.session_state.get('username')
         empresa = {
             "nome_empresa": nome_empresa,
             "endereco": endereco,
@@ -48,7 +48,7 @@ def gerar_relatorio_vencimento(data_inicio, data_fim):
         return
 
     try:
-        usuario_atual = st.session_state['username']
+        usuario_atual = st.session_state.get('username')
         empresas = db.empresas.find({"data_cadastro": {"$gte": data_inicio.isoformat(), "$lte": data_fim.isoformat()},
                                       "usuario": usuario_atual})
         empresas_list = list(empresas)
@@ -119,7 +119,7 @@ def listar_empresas():
         return []
 
     try:
-        usuario_atual = st.session_state['username']
+        usuario_atual = st.session_state.get('username')
         empresas = db.empresas.find({"usuario": usuario_atual})
         return list(empresas)
     except Exception as e:
@@ -132,8 +132,8 @@ def excluir_empresa(nome_empresa):
         return
 
     try:
-        usuario_atual = st.session_state['username']
-        result = db.empresas.delete_one({"nome_empresa": nome_empresa, "usuario": usuario_atual})  # Excluir apenas se for do usuário atual
+        usuario_atual = st.session_state.get('username')
+        result = db.empresas.delete_one({"nome_empresa": nome_empresa, "usuario": usuario_atual})
         if result.deleted_count > 0:
             st.success("Empresa excluída com sucesso!")
         else:
@@ -151,7 +151,7 @@ def tela_login():
         if verificar_usuario(username, senha):
             st.session_state['logged_in'] = True
             st.session_state['username'] = username
-            st.rerun()
+            st.experimental_rerun()  # Rerun para atualizar a interface
         else:
             st.error("Usuário ou senha incorretos.")
 
