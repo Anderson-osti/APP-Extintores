@@ -3,9 +3,8 @@ from pymongo import MongoClient
 from datetime import datetime, timedelta
 from fpdf import FPDF
 
+
 # Conectar ao MongoDB
-
-
 def criar_conexao():
     try:
         client = MongoClient(st.secrets["MONGO_URL"])
@@ -25,8 +24,8 @@ def verificar_usuario(username, senha):
     return usuarios_permitidos.get(username) == senha
 
 
-def cadastrar_empresa(nome_empresa, endereco, tipos_extintores,
-                      quantidade_extintor, capacidade_extintor, data_cadastro):
+def cadastrar_empresa(nome_empresa, endereco, tipos_extintores, quantidade_extintor, capacidade_extintor,
+                      data_cadastro):
     db = criar_conexao()
     if db is None:
         return
@@ -147,6 +146,7 @@ def listar_empresas():
 def tela_login():
     st.image('logo.png', width=100)  # Adicionando o logotipo
     st.title("Login FIRECHECK")
+
     username = st.text_input("Usuário", key="username")
     senha = st.text_input("Senha", type="password", key="senha")
 
@@ -154,7 +154,7 @@ def tela_login():
         if verificar_usuario(username, senha):
             st.session_state['logged_in'] = True
             st.session_state['username'] = username  # Armazena o nome do usuário logado
-            st.rerun()
+            st.rerun()  # Recarrega a página
         else:
             st.error("Usuário ou senha incorretos.")
 
@@ -212,8 +212,8 @@ def excluir_empresa(nome_empresa):
     if db is None:
         return
     try:
-        db.empresas.delete_one({"nome_empresa": nome_empresa,
-                                "usuario": st.session_state['username']})  # Exclui apenas do usuário logado
+        db.empresas.delete_one(
+            {"nome_empresa": nome_empresa, "usuario": st.session_state['username']})  # Exclui apenas do usuário logado
         st.success(f"Empresa '{nome_empresa}' excluída com sucesso.")
         st.rerun()  # Atualiza a página
     except Exception as e:
