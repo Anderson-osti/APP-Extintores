@@ -152,25 +152,18 @@ def tela_login():
     username = st.text_input("Usuário", key="username")
     senha = st.text_input("Senha", type="password", key="senha")
 
-    login_disabled = st.session_state.get("login_disabled", False)
-
-    if st.button("Login", disabled=login_disabled):
+    if st.button("Login"):
         if verificar_usuario(username, senha):
             st.session_state['logged_in'] = True
-            st.rerun()  # Usar experimental_rerun para evitar problemas de instância
+            st.rerun()  # Reinicia a aplicação para carregar o menu principal
         else:
             st.error("Usuário ou senha incorretos.")
-            st.session_state["login_disabled"] = True  # Desabilitar o botão após falha
-    else:
-        # Se o usuário já estiver logado, desabilitar o botão
-        st.session_state["login_disabled"] = True
 
 
 def sair_app():
     if st.button("Sair do App"):
         st.session_state['logged_in'] = False
         st.session_state.pop('username', None)  # Remove o usuário logado
-        st.session_state["login_disabled"] = False  # Reabilitar o botão de login
         st.rerun()  # Reinicia a aplicação
 
 
@@ -214,7 +207,7 @@ def tela_cadastro():
     # Permitir cadastrar múltiplos tipos de extintores
     st.subheader("Cadastro de Extintores")
     tipos_extintores = []
-    extintor_index = 0  # Adiciona um índice para cada extintor
+    extintor_index = 0  # Índice para garantir chaves únicas
 
     while True:
         tipo_extintor = st.selectbox("Tipo de Extintor", ["Água", "Pó Químico (BC)",
