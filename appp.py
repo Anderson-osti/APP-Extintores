@@ -147,22 +147,30 @@ def tela_login():
     st.title("Login FIRECHECK")
 
     # Widgets para o login
+    if 'username' not in st.session_state:
+        st.session_state['username'] = ""
     username = st.text_input("Usuário", key="username")
     senha = st.text_input("Senha", type="password", key="senha")
 
-    if st.button("Login"):
+    login_disabled = st.session_state.get("login_disabled", False)
+
+    if st.button("Login", disabled=login_disabled):
         if verificar_usuario(username, senha):
             st.session_state['logged_in'] = True
-            st.session_state['username'] = username  # Armazenar o usuário logado
             st.rerun()  # Usar experimental_rerun para evitar problemas de instância
         else:
             st.error("Usuário ou senha incorretos.")
+            st.session_state["login_disabled"] = True  # Desabilitar o botão após falha
+    else:
+        # Se o usuário já estiver logado, desabilitar o botão
+        st.session_state["login_disabled"] = True
 
 
 def sair_app():
     if st.button("Sair do App"):
         st.session_state['logged_in'] = False
         st.session_state.pop('username', None)  # Remove o usuário logado
+        st.session_state["login_disabled"] = False  # Reabilitar o botão de login
         st.rerun()  # Reinicia a aplicação
 
 
@@ -224,7 +232,7 @@ def tela_cadastro():
             'capacidade': capacidade_extintor
         })
 
-        if st.button("Adicionar outro extintor"):
+        if st.button("Adicionar outro extintor", key=f"add_extintor_{extintor_index}"):
             extintor_index += 1  # Incrementa o índice para o próximo extintor
             continue
         else:
