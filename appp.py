@@ -120,7 +120,7 @@ def gerar_pdf(empresas):
     pdf.output(pdf_file)
 
     with open(pdf_file, "rb") as file:
-        st.download_button(
+        btn = st.download_button(
             label="Baixar Relatório em PDF",
             data=file,
             file_name=pdf_file,
@@ -142,48 +142,17 @@ def listar_empresas():
         return []
 
 
-def excluir_empresa(nome_empresa):
-    db = criar_conexao()
-    if db is None:
-        return
-    try:
-        db.empresas.delete_one({"nome_empresa": nome_empresa})
-        st.success(f"Empresa '{nome_empresa}' excluída com sucesso.")
-    except Exception as e:
-        st.error(f"Erro ao excluir empresa: {e}")
-
-
-def tela_excluir_empresa():
-    st.header("Excluir Empresa")
-    empresas = listar_empresas()
-
-    if not empresas:
-        st.warning("Nenhuma empresa cadastrada para excluir.")
-        return
-
-    nomes_empresas = [empresa['nome_empresa'] for empresa in empresas]
-    nome_empresa = st.selectbox("Selecione a Empresa a ser excluída", nomes_empresas, key="nome_empresa_excluir")
-
-    if st.button("Excluir Empresa"):
-        excluir_empresa(nome_empresa)
-
-
 def tela_login():
     st.image('logo.png', width=100)  # Adicionando o logotipo
     st.title("Login FIRECHECK")
 
-    # Use text_input only to get username and password
-    if 'username' not in st.session_state:
-        st.session_state['username'] = ""
-
-    username = st.text_input("Usuário", key="username")
+    username = st.text_input("Usuário", key="username")  # Removemos a inicialização do session_state aqui
     senha = st.text_input("Senha", type="password", key="senha")
 
     if st.button("Login"):
         if verificar_usuario(username, senha):
             st.session_state['logged_in'] = True
-            st.session_state['username'] = username  # Armazena o usuário logado
-            st.rerun()  # Usa st.rerun() conforme a sua correção
+            st.rerun()  # Usa st.rerun() para atualizar a aplicação
         else:
             st.error("Usuário ou senha incorretos.")
 
@@ -276,10 +245,43 @@ def tela_relatorio():
             st.error("A data de início deve ser anterior à data de fim.")
 
 
-def main():
-    if 'logged_in' not in st.session_state:
-        st.session_state['logged_in'] = False
+def excluir_empresa(nome_empresa):
+    db = criar_conexao()
+    if db is None:
+        return
+    try:
+        db.empresas.delete_one({"nome_empresa": nome_empresa})
+        st.success(f"Empresa '{nome_empresa}' excluída com sucesso.")
+    except Exception as e:
+        st.error(f"Erro ao excluir empresa: {e}")
 
+
+def tela_excluir_empresa():
+    st.header("Excluir Empresa")
+    empresas = listar_empresas()
+
+    if not empresas:
+        st.warning("Nenhuma empresa cadastrada para excluir.")
+        return
+
+    nomes_empresas = [empresa['nome_empresa'] for empresa in empresas]
+    nome_empresa = st.selectbox("Selecione a Empresa a ser excluída", nomes_empresas, key="nome_empresa_excluir")
+
+    if st.button("Excluir Empresa"):
+        excluir_empresa(nome_empresa)
+
+
+# Inicialização do session_state
+if 'logged_in' not in st.session_state:
+    st.session_state['logged_in'] = False
+
+if 'username' not in st.session_state:
+    st.session_state['username'] = ""  # Inicialização do session_state para username
+
+# Execução principal
+
+
+def main():
     if not st.session_state['logged_in']:
         tela_login()
     else:
