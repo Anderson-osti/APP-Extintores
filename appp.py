@@ -45,7 +45,7 @@ def cadastrar_empresa(nome_empresa, endereco, tipos_extintores, quantidade_extin
         }
         db.empresas.insert_one(empresa)
         st.success("Empresa cadastrada com sucesso!")
-        st.rerun()  # Atualiza a página
+        st.experimental_rerun()  # Atualiza a página
     except Exception as e:
         st.error(f"Erro ao cadastrar empresa: {e}")
 
@@ -147,14 +147,17 @@ def tela_login():
     st.image('logo.png', width=100)  # Adicionando o logotipo
     st.title("Login FIRECHECK")
 
-    username = st.text_input("Usuário", key="username")
+    if 'username' not in st.session_state:
+        st.session_state['username'] = ""  # Inicializa o username se não existir
+
+    username = st.text_input("Usuário", key="username_input", value=st.session_state['username'])
     senha = st.text_input("Senha", type="password", key="senha")
 
     if st.button("Login"):
         if verificar_usuario(username, senha):
             st.session_state['logged_in'] = True
             st.session_state['username'] = username  # Armazena o nome do usuário logado
-            st.rerun()  # Recarrega a página
+            st.experimental_rerun()  # Recarrega a página
         else:
             st.error("Usuário ou senha incorretos.")
 
@@ -212,10 +215,13 @@ def excluir_empresa(nome_empresa):
     if db is None:
         return
     try:
-        db.empresas.delete_one(
-            {"nome_empresa": nome_empresa, "usuario": st.session_state['username']})  # Exclui apenas do usuário logado
-        st.success(f"Empresa '{nome_empresa}' excluída com sucesso.")
-        st.rerun()  # Atualiza a página
+        # Exclui a empresa apenas se pertencer ao usuário logado
+        result = db.empresas.delete_one({"nome_empresa": nome_empresa, "usuario": st.session_state['username']})
+        if result.deleted_count > 0:
+            st.success(f"Empresa '{nome_empresa}' excluída com sucesso.")
+        else:
+            st.warning(f"Empresa '{nome_empresa}' não encontrada ou não pertence a você.")
+        st.experimental_rerun()  # Atualiza a página
     except Exception as e:
         st.error(f"Erro ao excluir empresa: {e}")
 
