@@ -153,7 +153,7 @@ def tela_login():
     if st.button("Login"):
         if verificar_usuario(username, senha):
             st.session_state['logged_in'] = True
-            st.session_state['username'] = username  # Armazenar o usuário logado antes de criar o widget
+            st.session_state['username'] = username  # Armazenar o usuário logado
             st.rerun()  # Usar experimental_rerun para evitar problemas de instância
         else:
             st.error("Usuário ou senha incorretos.")
