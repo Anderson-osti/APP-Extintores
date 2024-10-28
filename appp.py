@@ -3,9 +3,8 @@ from pymongo import MongoClient
 from datetime import datetime, timedelta
 from fpdf import FPDF
 
+
 # Conectar ao MongoDB
-
-
 def criar_conexao():
     try:
         client = MongoClient(st.secrets["MONGO_URL"])
@@ -150,14 +149,18 @@ def listar_empresas():
 def tela_login():
     st.image('logo.png', width=100)  # Adicionando o logotipo
     st.title("Login FIRECHECK")
+
+    # Mova a atribuição do session_state para antes do widget
+    if 'username' not in st.session_state:
+        st.session_state['username'] = ""
+
     username = st.text_input("Usuário", key="username")
     senha = st.text_input("Senha", type="password", key="senha")
 
     if st.button("Login"):
         if verificar_usuario(username, senha):
             st.session_state['logged_in'] = True
-            st.session_state['username'] = username  # Armazena o usuário logado
-            st.rerun()
+            st.rerun()  # Use st.rerun() para recarregar a página
         else:
             st.error("Usuário ou senha incorretos.")
 
