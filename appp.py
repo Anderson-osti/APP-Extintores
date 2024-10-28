@@ -136,7 +136,7 @@ def listar_empresas():
 
 def tela_login():
     st.image('logo.png', width=100)  # Adicionando o logotipo
-    st.title("Login no Meu App")
+    st.title("Login FIRECHECK")
     username = st.text_input("Usuário", key="username")
     senha = st.text_input("Senha", type="password", key="senha")
 
