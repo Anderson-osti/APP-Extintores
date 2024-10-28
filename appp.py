@@ -204,15 +204,14 @@ def tela_cadastro():
     # Permitir cadastrar múltiplos tipos de extintores
     st.subheader("Cadastro de Extintores")
     tipos_extintores = []
-    contador = 0  # Inicializa um contador para chaves únicas
     while True:
         tipo_extintor = st.selectbox("Tipo de Extintor", ["Água", "Pó Químico (BC)",
                                                           "Pó Químico (ABC)", "CO2", "Espuma"],
-                                     key=f"tipo_extintor_{contador}")
+                                     key=f"tipo_extintor_{len(tipos_extintores)}")
         quantidade_extintor = st.number_input("Quantidade de Extintores", min_value=1, step=1,
-                                              key=f"quantidade_extintor_{contador}")
+                                              key=f"quantidade_extintor_{len(tipos_extintores)}")
         capacidade_extintor = st.selectbox("Capacidade do Extintor", ["4 kg", "6 kg", "9 kg", "12 kg", "6 L", "10 L"],
-                                           key=f"capacidade_extintor_{contador}")
+                                           key=f"capacidade_extintor_{len(tipos_extintores)}")
 
         # Armazena os dados do extintor
         tipos_extintores.append({
@@ -220,8 +219,6 @@ def tela_cadastro():
             'quantidade': quantidade_extintor,
             'capacidade': capacidade_extintor
         })
-
-        contador += 1  # Incrementa o contador para a próxima iteração
 
         if st.button("Adicionar outro extintor"):
             continue
