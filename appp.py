@@ -145,14 +145,14 @@ def listar_empresas():
 def tela_login():
     st.image('logo.png', width=100)  # Adicionando o logotipo
     st.title("Login FIRECHECK")
-
-    username = st.text_input("Usuário", key="username")  # Removemos a inicialização do session_state aqui
+    username = st.text_input("Usuário", key="username")
     senha = st.text_input("Senha", type="password", key="senha")
 
     if st.button("Login"):
         if verificar_usuario(username, senha):
             st.session_state['logged_in'] = True
-            st.rerun()  # Usa st.rerun() para atualizar a aplicação
+            st.session_state['username'] = username  # Armazena o usuário logado
+            st.rerun()  # Usa st.rerun() conforme a sua correção
         else:
             st.error("Usuário ou senha incorretos.")
 
@@ -204,13 +204,15 @@ def tela_cadastro():
     # Permitir cadastrar múltiplos tipos de extintores
     st.subheader("Cadastro de Extintores")
     tipos_extintores = []
+    contador = 0  # Inicializa um contador para chaves únicas
     while True:
         tipo_extintor = st.selectbox("Tipo de Extintor", ["Água", "Pó Químico (BC)",
-                                                          "Pó Químico (ABC)", "CO2", "Espuma"], key="tipo_extintor")
+                                                          "Pó Químico (ABC)", "CO2", "Espuma"],
+                                     key=f"tipo_extintor_{contador}")
         quantidade_extintor = st.number_input("Quantidade de Extintores", min_value=1, step=1,
-                                              key="quantidade_extintor")
+                                              key=f"quantidade_extintor_{contador}")
         capacidade_extintor = st.selectbox("Capacidade do Extintor", ["4 kg", "6 kg", "9 kg", "12 kg", "6 L", "10 L"],
-                                           key="capacidade_extintor")
+                                           key=f"capacidade_extintor_{contador}")
 
         # Armazena os dados do extintor
         tipos_extintores.append({
@@ -218,6 +220,8 @@ def tela_cadastro():
             'quantidade': quantidade_extintor,
             'capacidade': capacidade_extintor
         })
+
+        contador += 1  # Incrementa o contador para a próxima iteração
 
         if st.button("Adicionar outro extintor"):
             continue
@@ -271,23 +275,12 @@ def tela_excluir_empresa():
         excluir_empresa(nome_empresa)
 
 
-# Inicialização do session_state
-if 'logged_in' not in st.session_state:
-    st.session_state['logged_in'] = False
-
-if 'username' not in st.session_state:
-    st.session_state['username'] = ""  # Inicialização do session_state para username
-
-# Execução principal
-
-
-def main():
-    if not st.session_state['logged_in']:
-        tela_login()
-    else:
-        sair_app()  # Adiciona a funcionalidade de sair do app
-        menu_principal()
-
-
 if __name__ == "__main__":
-    main()
+    if 'logged_in' not in st.session_state:
+        st.session_state['logged_in'] = False
+
+    if st.session_state['logged_in']:
+        menu_principal()
+        sair_app()  # Adiciona o botão de sair
+    else:
+        tela_login()
