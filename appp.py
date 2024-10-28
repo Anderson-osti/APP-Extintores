@@ -210,7 +210,7 @@ def tela_cadastro():
     if st.button("Cadastrar Empresa"):
         if nome_empresa and endereco and extintores:
             cadastrar_empresa(nome_empresa, endereco, extintores, data_cadastro)
-            st.session_state.rerun()  # Atualiza a página após o cadastro
+            st.rerun()  # Use st.rerun() para atualizar a página após o cadastro
         else:
             st.error("Por favor, preencha todos os campos obrigatórios.")
 
