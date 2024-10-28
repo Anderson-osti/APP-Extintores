@@ -147,10 +147,7 @@ def tela_login():
     st.title("Login FIRECHECK")
 
     # Widgets para o login
-    if 'username' not in st.session_state:
-        st.session_state['username'] = ""
-
-    username = st.text_input("Usuário", value=st.session_state['username'], key="username")
+    username = st.text_input("Usuário", key="username")
     senha = st.text_input("Senha", type="password", key="senha")
 
     if st.button("Login"):
@@ -209,14 +206,16 @@ def tela_cadastro():
     # Permitir cadastrar múltiplos tipos de extintores
     st.subheader("Cadastro de Extintores")
     tipos_extintores = []
+    extintor_index = 0  # Adiciona um índice para cada extintor
+
     while True:
         tipo_extintor = st.selectbox("Tipo de Extintor", ["Água", "Pó Químico (BC)",
                                                           "Pó Químico (ABC)", "CO2", "Espuma"],
-                                     key=f"tipo_extintor_{len(tipos_extintores)}")
+                                     key=f"tipo_extintor_{extintor_index}")
         quantidade_extintor = st.number_input("Quantidade de Extintores", min_value=1, step=1,
-                                              key=f"quantidade_extintor_{len(tipos_extintores)}")
+                                              key=f"quantidade_extintor_{extintor_index}")
         capacidade_extintor = st.selectbox("Capacidade do Extintor", ["4 kg", "6 kg", "9 kg", "12 kg", "6 L", "10 L"],
-                                           key=f"capacidade_extintor_{len(tipos_extintores)}")
+                                           key=f"capacidade_extintor_{extintor_index}")
 
         # Armazena os dados do extintor
         tipos_extintores.append({
@@ -226,6 +225,7 @@ def tela_cadastro():
         })
 
         if st.button("Adicionar outro extintor"):
+            extintor_index += 1  # Incrementa o índice para o próximo extintor
             continue
         else:
             break
