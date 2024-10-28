@@ -147,7 +147,10 @@ def tela_login():
     st.title("Login FIRECHECK")
 
     # Widgets para o login
-    username = st.text_input("Usuário", key="username")
+    if 'username' not in st.session_state:
+        st.session_state['username'] = ""
+
+    username = st.text_input("Usuário", value=st.session_state['username'], key="username")
     senha = st.text_input("Senha", type="password", key="senha")
 
     if st.button("Login"):
