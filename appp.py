@@ -25,7 +25,8 @@ def verificar_usuario(username, senha):
     return usuarios_permitidos.get(username) == senha
 
 
-def cadastrar_empresa(nome_empresa, endereco, tipo_extintor, quantidade_extintor, capacidade_extintor, data_cadastro):
+def cadastrar_empresa(nome_empresa, endereco, tipos_extintores,
+                      quantidade_extintor, capacidade_extintor, data_cadastro):
     db = criar_conexao()
     if db is None:
         return
@@ -37,13 +38,15 @@ def cadastrar_empresa(nome_empresa, endereco, tipo_extintor, quantidade_extintor
         empresa = {
             "nome_empresa": nome_empresa,
             "endereco": endereco,
-            "tipo_extintor": tipo_extintor,
+            "tipos_extintores": tipos_extintores,  # Agora armazena uma lista de tipos
             "quantidade_extintor": quantidade_extintor,
             "capacidade_extintor": capacidade_extintor,
-            "data_cadastro": data_cadastro_iso  # Armazenando como string ISO
+            "data_cadastro": data_cadastro_iso,  # Armazenando como string ISO
+            "usuario": st.session_state['username']  # Armazena o usuário que cadastrou
         }
         db.empresas.insert_one(empresa)
         st.success("Empresa cadastrada com sucesso!")
+        st.rerun()  # Atualiza a página
     except Exception as e:
         st.error(f"Erro ao cadastrar empresa: {e}")
 
@@ -54,15 +57,21 @@ def gerar_relatorio_vencimento(data_inicio, data_fim):
         return
 
     try:
-        empresas = db.empresas.find({"data_cadastro": {"$gte": data_inicio.isoformat(), "$lte": data_fim.isoformat()}})
+        # Filtra empresas por data de cadastro e usuário
+        empresas = db.empresas.find({
+            "data_cadastro": {"$gte": data_inicio.isoformat(), "$lte": data_fim.isoformat()},
+            "usuario": st.session_state['username']  # Apenas empresas do usuário logado
+        })
         empresas_list = list(empresas)
         if empresas_list:
             st.write("Empresas com extintores próximos do vencimento:")
             for empresa in empresas_list:
                 st.write(
-                    f"Nome: {empresa['nome_empresa']}, Endereço: {empresa['endereco']},"
-                    f"Tipo de Extintor: {empresa['tipo_extintor']}, Quantidade: {empresa['quantidade_extintor']},"
-                    f"Capacidade: {empresa['capacidade_extintor']}, Data de Cadastro: {empresa['data_cadastro']}"
+                    f"Nome: {empresa['nome_empresa']}, Endereço: {empresa['endereco']}, "
+                    f"Tipos de Extintores: {', '.join(empresa['tipos_extintores'])}, "
+                    f"Quantidade: {empresa['quantidade_extintor']}, "
+                    f"Capacidade: {empresa['capacidade_extintor']}, "
+                    f"Data de Cadastro: {empresa['data_cadastro']}"
                 )
             gerar_pdf(empresas_list)
         else:
@@ -101,7 +110,7 @@ def gerar_pdf(empresas):
         pdf.chapter_title(f"Empresa: {empresa['nome_empresa']}")
         body = (
             f"Endereço: {empresa['endereco']}\n"
-            f"Tipo de Extintor: {empresa['tipo_extintor']}\n"
+            f"Tipos de Extintores: {', '.join(empresa['tipos_extintores'])}\n"
             f"Quantidade: {empresa['quantidade_extintor']}\n"
             f"Capacidade: {empresa['capacidade_extintor']}\n"
             f"Data de Cadastro: {empresa['data_cadastro']}"  # Data já está em formato de string
@@ -127,7 +136,8 @@ def listar_empresas():
         return []
 
     try:
-        empresas = db.empresas.find()
+        # Filtra empresas por usuário
+        empresas = db.empresas.find({"usuario": st.session_state['username']})
         return list(empresas)
     except Exception as e:
         st.error(f"Erro ao listar empresas: {e}")
@@ -143,6 +153,7 @@ def tela_login():
     if st.button("Login"):
         if verificar_usuario(username, senha):
             st.session_state['logged_in'] = True
+            st.session_state['username'] = username  # Armazena o nome do usuário logado
             st.rerun()
         else:
             st.error("Usuário ou senha incorretos.")
@@ -168,16 +179,17 @@ def tela_cadastro():
     st.header("Cadastro de Empresa")
     nome_empresa = st.text_input("Nome da Empresa", key="nome_empresa")
     endereco = st.text_input("Endereço", key="endereco")
-    tipo_extintor = st.selectbox("Tipo de Extintor", ["Água", "Pó Químico (BC)",
-                                                      "Pó Químico (ABC)", "CO2", "Espuma"], key="tipo_extintor")
+    tipos_extintores = st.multiselect("Tipos de Extintores", ["Água", "Pó Químico (BC)",
+                                                              "Pó Químico (ABC)", "CO2", "Espuma"],
+                                      key="tipos_extintores")
     quantidade_extintor = st.number_input("Quantidade de Extintores", min_value=1, step=1, key="quantidade_extintor")
     capacidade_extintor = st.selectbox("Capacidade do Extintor", ["4 kg", "6 kg", "9 kg", "12 kg", "6 L", "10 L"],
                                        key="capacidade_extintor")
     data_cadastro = st.date_input("Data de Cadastro", datetime.now(), key="data_cadastro")
 
     if st.button("Cadastrar Empresa"):
-        if nome_empresa and endereco:
-            cadastrar_empresa(nome_empresa, endereco, tipo_extintor,
+        if nome_empresa and endereco and tipos_extintores:
+            cadastrar_empresa(nome_empresa, endereco, tipos_extintores,
                               quantidade_extintor, capacidade_extintor, data_cadastro)
         else:
             st.error("Por favor, preencha todos os campos obrigatórios.")
@@ -200,8 +212,10 @@ def excluir_empresa(nome_empresa):
     if db is None:
         return
     try:
-        db.empresas.delete_one({"nome_empresa": nome_empresa})
+        db.empresas.delete_one({"nome_empresa": nome_empresa,
+                                "usuario": st.session_state['username']})  # Exclui apenas do usuário logado
         st.success(f"Empresa '{nome_empresa}' excluída com sucesso.")
+        st.rerun()  # Atualiza a página
     except Exception as e:
         st.error(f"Erro ao excluir empresa: {e}")
 
