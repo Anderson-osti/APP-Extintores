@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 from fpdf import FPDF
 
 # Conectar ao MongoDB
+
+
 def criar_conexao():
     try:
         client = MongoClient(st.secrets["MONGO_URL"])
@@ -13,6 +15,7 @@ def criar_conexao():
         st.error(f"Erro ao conectar ao MongoDB: {e}")
         return None
 
+
 def verificar_usuario(username, senha):
     # Usuários permitidos
     usuarios_permitidos = {
@@ -20,6 +23,7 @@ def verificar_usuario(username, senha):
         st.secrets["USUARIO2"]: st.secrets["SENHA2"]
     }
     return usuarios_permitidos.get(username) == senha
+
 
 def cadastrar_empresa(nome_empresa, endereco, tipo_extintor, quantidade_extintor, capacidade_extintor, data_cadastro):
     db = criar_conexao()
@@ -43,6 +47,7 @@ def cadastrar_empresa(nome_empresa, endereco, tipo_extintor, quantidade_extintor
     except Exception as e:
         st.error(f"Erro ao cadastrar empresa: {e}")
 
+
 def gerar_relatorio_vencimento(data_inicio, data_fim):
     db = criar_conexao()
     if db is None:
@@ -55,13 +60,16 @@ def gerar_relatorio_vencimento(data_inicio, data_fim):
             st.write("Empresas com extintores próximos do vencimento:")
             for empresa in empresas_list:
                 st.write(
-                    f"Nome: {empresa['nome_empresa']}, Endereço: {empresa['endereco']}, Tipo de Extintor: {empresa['tipo_extintor']}, Quantidade: {empresa['quantidade_extintor']}, Capacidade: {empresa['capacidade_extintor']}, Data de Cadastro: {empresa['data_cadastro']}"
+                    f"Nome: {empresa['nome_empresa']}, Endereço: {empresa['endereco']},"
+                    f"Tipo de Extintor: {empresa['tipo_extintor']}, Quantidade: {empresa['quantidade_extintor']},"
+                    f"Capacidade: {empresa['capacidade_extintor']}, Data de Cadastro: {empresa['data_cadastro']}"
                 )
             gerar_pdf(empresas_list)
         else:
             st.write("Nenhuma empresa com extintores próximos do vencimento.")
     except Exception as e:
         st.error(f"Erro ao gerar relatório: {e}")
+
 
 def gerar_pdf(empresas):
     class PDF(FPDF):
@@ -112,6 +120,7 @@ def gerar_pdf(empresas):
         )
     st.success("PDF gerado com sucesso!")
 
+
 def listar_empresas():
     db = criar_conexao()
     if db is None:
@@ -123,6 +132,7 @@ def listar_empresas():
     except Exception as e:
         st.error(f"Erro ao listar empresas: {e}")
         return []
+
 
 def tela_login():
     st.image('logo.png', width=100)  # Adicionando o logotipo
@@ -137,10 +147,12 @@ def tela_login():
         else:
             st.error("Usuário ou senha incorretos.")
 
+
 def menu_principal():
     st.sidebar.title("Menu")
-    opcao = st.sidebar.selectbox("Escolha uma opção",
-                                   ["Cadastro de Empresa", "Gerar Relatório de Vencimento", "Listar Empresas Cadastradas", "Excluir Empresa"], key="menu_opcao")
+    opcao = st.sidebar.selectbox("Escolha uma opção", ["Cadastro de Empresa", "Gerar Relatório de Vencimento",
+                                                       "Listar Empresas Cadastradas", "Excluir Empresa"],
+                                 key="menu_opcao")
 
     if opcao == "Cadastro de Empresa":
         tela_cadastro()
@@ -151,20 +163,25 @@ def menu_principal():
     elif opcao == "Excluir Empresa":
         tela_excluir_empresa()
 
+
 def tela_cadastro():
     st.header("Cadastro de Empresa")
     nome_empresa = st.text_input("Nome da Empresa", key="nome_empresa")
     endereco = st.text_input("Endereço", key="endereco")
-    tipo_extintor = st.selectbox("Tipo de Extintor", ["Água", "Pó Químico (BC)", "Pó Químico (ABC)", "CO2", "Espuma"], key="tipo_extintor")
+    tipo_extintor = st.selectbox("Tipo de Extintor", ["Água", "Pó Químico (BC)",
+                                                      "Pó Químico (ABC)", "CO2", "Espuma"], key="tipo_extintor")
     quantidade_extintor = st.number_input("Quantidade de Extintores", min_value=1, step=1, key="quantidade_extintor")
-    capacidade_extintor = st.selectbox("Capacidade do Extintor", ["4 kg", "6 kg", "9 kg", "12 kg", "6 L", "10 L"], key="capacidade_extintor")
+    capacidade_extintor = st.selectbox("Capacidade do Extintor", ["4 kg", "6 kg", "9 kg", "12 kg", "6 L", "10 L"],
+                                       key="capacidade_extintor")
     data_cadastro = st.date_input("Data de Cadastro", datetime.now(), key="data_cadastro")
 
     if st.button("Cadastrar Empresa"):
         if nome_empresa and endereco:
-            cadastrar_empresa(nome_empresa, endereco, tipo_extintor, quantidade_extintor, capacidade_extintor, data_cadastro)
+            cadastrar_empresa(nome_empresa, endereco, tipo_extintor,
+                              quantidade_extintor, capacidade_extintor, data_cadastro)
         else:
             st.error("Por favor, preencha todos os campos obrigatórios.")
+
 
 def tela_relatorio():
     st.header("Gerar Relatório de Vencimento")
@@ -176,6 +193,18 @@ def tela_relatorio():
             gerar_relatorio_vencimento(data_inicio, data_fim)
         else:
             st.error("A data de início deve ser anterior à data de fim.")
+
+
+def excluir_empresa(nome_empresa):
+    db = criar_conexao()
+    if db is None:
+        return
+    try:
+        db.empresas.delete_one({"nome_empresa": nome_empresa})
+        st.success(f"Empresa '{nome_empresa}' excluída com sucesso.")
+    except Exception as e:
+        st.error(f"Erro ao excluir empresa: {e}")
+
 
 def tela_excluir_empresa():
     st.header("Excluir Empresa")
@@ -190,6 +219,7 @@ def tela_excluir_empresa():
 
     if st.button("Excluir Empresa"):
         excluir_empresa(nome_empresa)
+
 
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
