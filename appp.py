@@ -30,12 +30,13 @@ def cadastrar_empresa(nome_empresa, endereco, extintores, data_cadastro):
         return
 
     try:
+        # Converte a data para o formato ISO antes de armazenar
         data_cadastro_iso = data_cadastro.isoformat()  # Formato: 'YYYY-MM-DD'
 
         empresa = {
             "nome_empresa": nome_empresa,
             "endereco": endereco,
-            "extintores": extintores,  # Lista de extintores
+            "extintores": extintores,
             "data_cadastro": data_cadastro_iso  # Armazenando como string ISO
         }
         db.empresas.insert_one(empresa)
@@ -60,16 +61,12 @@ def gerar_relatorio_vencimento(data_inicio, data_fim):
                     f"Data de Cadastro: {empresa['data_cadastro']}"
                 )
 
-                # Verifica se a chave 'extintores' existe e itera sobre a lista de extintores
-                if 'extintores' in empresa:
-                    for extintor in empresa['extintores']:
-                        st.write(
-                            f"  Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']}, "
-                            f"Capacidade: {extintor['capacidade']}"
-                        )
-                else:
-                    st.warning("Nenhum extintor cadastrado para esta empresa.")
-
+                # Exibe os extintores associados à empresa
+                for extintor in empresa.get('extintores', []):
+                    st.write(
+                        f"  Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']}, "
+                        f"Capacidade: {extintor['capacidade']}"
+                    )
             gerar_pdf(empresas_list)
         else:
             st.write("Nenhuma empresa com extintores próximos do vencimento.")
@@ -111,14 +108,13 @@ def gerar_pdf(empresas):
         )
         pdf.chapter_body(body)
 
-        if 'extintores' in empresa:
-            for extintor in empresa['extintores']:
-                body_extintor = (
-                    f"Tipo: {extintor['tipo']}\n"
-                    f"Quantidade: {extintor['quantidade']}\n"
-                    f"Capacidade: {extintor['capacidade']}\n"
-                )
-                pdf.chapter_body(body_extintor)
+        for extintor in empresa.get('extintores', []):
+            body_extintor = (
+                f"  Tipo: {extintor['tipo']}\n"
+                f"  Quantidade: {extintor['quantidade']}\n"
+                f"  Capacidade: {extintor['capacidade']}\n"
+            )
+            pdf.chapter_body(body_extintor)
 
     pdf_file = "relatorio_vencimento.pdf"
     pdf.output(pdf_file)
@@ -149,20 +145,23 @@ def listar_empresas():
 def tela_login():
     st.image('logo.png', width=100)  # Adicionando o logotipo
     st.title("Login FIRECHECK")
-
-    # Mova a atribuição do session_state para antes do widget
-    if 'username' not in st.session_state:
-        st.session_state['username'] = ""
-
     username = st.text_input("Usuário", key="username")
     senha = st.text_input("Senha", type="password", key="senha")
 
     if st.button("Login"):
         if verificar_usuario(username, senha):
             st.session_state['logged_in'] = True
-            st.rerun()  # Use st.rerun() para recarregar a página
+            st.session_state['username'] = username  # Armazena o usuário logado
+            st.rerun()  # Usa st.rerun() conforme a sua correção
         else:
             st.error("Usuário ou senha incorretos.")
+
+
+def sair_app():
+    if st.button("Sair do App"):
+        st.session_state['logged_in'] = False
+        st.session_state.pop('username', None)  # Remove o usuário logado
+        st.rerun()  # Reinicia a aplicação
 
 
 def menu_principal():
@@ -176,7 +175,23 @@ def menu_principal():
     elif opcao == "Gerar Relatório de Vencimento":
         tela_relatorio()
     elif opcao == "Listar Empresas Cadastradas":
-        listar_empresas()
+        empresas = listar_empresas()  # Chama a função para listar empresas
+        if empresas:  # Verifica se existem empresas para exibir
+            st.header("Empresas Cadastradas")
+            for empresa in empresas:
+                st.write(
+                    f"Nome: {empresa['nome_empresa']}, Endereço: {empresa['endereco']}, "
+                    f"Data de Cadastro: {empresa['data_cadastro']}"
+                )
+
+                # Exibe os extintores associados à empresa
+                for extintor in empresa.get('extintores', []):
+                    st.write(
+                        f"  Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']}, "
+                        f"Capacidade: {extintor['capacidade']}"
+                    )
+        else:
+            st.warning("Nenhuma empresa cadastrada.")
     elif opcao == "Excluir Empresa":
         tela_excluir_empresa()
 
@@ -186,31 +201,34 @@ def tela_cadastro():
     nome_empresa = st.text_input("Nome da Empresa", key="nome_empresa")
     endereco = st.text_input("Endereço", key="endereco")
 
-    # Para cadastrar múltiplos tipos de extintores
-    tipos_extintor = ["Água", "Pó Químico (BC)", "Pó Químico (ABC)", "CO2", "Espuma"]
-    extintores = []
+    # Permitir cadastrar múltiplos tipos de extintores
+    st.subheader("Cadastro de Extintores")
+    tipos_extintores = []
+    while True:
+        tipo_extintor = st.selectbox("Tipo de Extintor", ["Água", "Pó Químico (BC)",
+                                                          "Pó Químico (ABC)", "CO2", "Espuma"], key="tipo_extintor")
+        quantidade_extintor = st.number_input("Quantidade de Extintores", min_value=1, step=1,
+                                              key="quantidade_extintor")
+        capacidade_extintor = st.selectbox("Capacidade do Extintor", ["4 kg", "6 kg", "9 kg", "12 kg", "6 L", "10 L"],
+                                           key="capacidade_extintor")
 
-    for i in range(3):  # Limite de 3 extintores para fins de exemplo
-        st.subheader(f"Extintor {i + 1}")
-        tipo_extintor = st.selectbox(f"Tipo de Extintor", tipos_extintor, key=f"tipo_extintor_{i}")
-        quantidade_extintor = st.number_input(f"Quantidade de Extintores", min_value=0, step=1,
-                                              key=f"quantidade_extintor_{i}")
-        capacidade_extintor = st.selectbox(f"Capacidade do Extintor", ["4 kg", "6 kg", "9 kg", "12 kg", "6 L", "10 L"],
-                                           key=f"capacidade_extintor_{i}")
+        # Armazena os dados do extintor
+        tipos_extintores.append({
+            'tipo': tipo_extintor,
+            'quantidade': quantidade_extintor,
+            'capacidade': capacidade_extintor
+        })
 
-        if tipo_extintor and quantidade_extintor > 0:  # Adiciona o extintor se houver tipo e quantidade
-            extintores.append({
-                "tipo": tipo_extintor,
-                "quantidade": quantidade_extintor,
-                "capacidade": capacidade_extintor
-            })
+        if st.button("Adicionar outro extintor"):
+            continue
+        else:
+            break
 
     data_cadastro = st.date_input("Data de Cadastro", datetime.now(), key="data_cadastro")
 
     if st.button("Cadastrar Empresa"):
-        if nome_empresa and endereco and extintores:
-            cadastrar_empresa(nome_empresa, endereco, extintores, data_cadastro)
-            st.rerun()  # Use st.rerun() para atualizar a página após o cadastro
+        if nome_empresa and endereco:
+            cadastrar_empresa(nome_empresa, endereco, tipos_extintores, data_cadastro)
         else:
             st.error("Por favor, preencha todos os campos obrigatórios.")
 
@@ -258,5 +276,6 @@ if 'logged_in' not in st.session_state:
 
 if st.session_state['logged_in']:
     menu_principal()
+    sair_app()  # Adiciona o botão de sair
 else:
     tela_login()
