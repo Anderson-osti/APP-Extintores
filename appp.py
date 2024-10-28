@@ -45,7 +45,7 @@ def cadastrar_empresa(nome_empresa, endereco, tipos_extintores, quantidade_extin
         }
         db.empresas.insert_one(empresa)
         st.success("Empresa cadastrada com sucesso!")
-        st.experimental_rerun()  # Atualiza a página
+        st.rerun()  # Atualiza a página
     except Exception as e:
         st.error(f"Erro ao cadastrar empresa: {e}")
 
@@ -157,7 +157,7 @@ def tela_login():
         if verificar_usuario(username, senha):
             st.session_state['logged_in'] = True
             st.session_state['username'] = username  # Armazena o nome do usuário logado
-            st.experimental_rerun()  # Recarrega a página
+            st.rerun()  # Recarrega a página
         else:
             st.error("Usuário ou senha incorretos.")
 
@@ -221,7 +221,7 @@ def excluir_empresa(nome_empresa):
             st.success(f"Empresa '{nome_empresa}' excluída com sucesso.")
         else:
             st.warning(f"Empresa '{nome_empresa}' não encontrada ou não pertence a você.")
-        st.experimental_rerun()  # Atualiza a página
+        st.rerun()  # Atualiza a página
     except Exception as e:
         st.error(f"Erro ao excluir empresa: {e}")
 
