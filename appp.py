@@ -212,7 +212,6 @@ def tela_cadastro():
 
     # Permitir cadastrar apenas um tipo de extintor
     st.subheader("Cadastro de Extintores")
-    tipos_extintores = st.session_state.get('extintores', [])
 
     # Listas de tipos de extintores e capacidades
     lista_tipos_extintores = ["Pó ABC", "Pó BC", "CÓ2 Dióxido de Carbono", "Água"]
@@ -223,21 +222,27 @@ def tela_cadastro():
     quantidade_extintor = st.number_input("Quantidade", min_value=1, step=1)
     capacidade_extintor = st.selectbox("Selecione a capacidade (litros)", lista_capacidades_extintores)
 
-    if st.button("Adicionar Extintor"):
+    if st.button("Cadastrar Extintor"):
+        # Cria a lista de extintores apenas se ainda não existir
+        if 'extintores' not in st.session_state:
+            st.session_state['extintores'] = []
+
         # Adiciona um extintor à lista
-        tipos_extintros = [{"tipo": tipo_extintor, "quantidade": quantidade_extintor, "capacidade": capacidade_extintor}]
-        st.session_state['extintores'] = tipos_extintros
+        novo_extintor = {"tipo": tipo_extintor, "quantidade": quantidade_extintor, "capacidade": capacidade_extintor}
+        st.session_state['extintores'].append(novo_extintor)
         st.success("Extintor adicionado com sucesso!")
 
     st.subheader("Lista de Extintores Cadastrados")
-    for extintor in tipos_extintores:
-        st.write(f"Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']}, Capacidade: {extintor['capacidade']}")
+    for extintor in st.session_state.get('extintores', []):
+        st.write(
+            f"Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']}, Capacidade: {extintor['capacidade']}")
 
     if st.button("Cadastrar Empresa"):
-        if nome_empresa and endereco and tipos_extintores:
+        if nome_empresa and endereco and st.session_state.get('extintores'):  # Verifica se há extintores cadastrados
             data_cadastro = datetime.now()
             usuario_cadastrador = st.session_state['username']
-            cadastrar_empresa(nome_empresa, endereco, tipos_extintores, data_cadastro, usuario_cadastrador)
+            cadastrar_empresa(nome_empresa, endereco, st.session_state['extintores'], data_cadastro,
+                              usuario_cadastrador)
         else:
             st.warning("Por favor, preencha todos os campos e adicione um extintor.")
 
