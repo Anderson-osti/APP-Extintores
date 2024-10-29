@@ -152,10 +152,8 @@ def tela_login():
     st.title("Login FIRECHECK")
 
     # Widgets para o login
-    if 'username' not in st.session_state:
-        st.session_state['username'] = ""
-    username = st.text_input("Usuário", key="username")
-    senha = st.text_input("Senha", type="password", key="senha")
+    username = st.text_input("Usuário", key="username_input")
+    senha = st.text_input("Senha", type="password", key="senha_input")
 
     if st.button("Login"):
         if verificar_usuario(username, senha):
@@ -168,7 +166,7 @@ def tela_login():
 def sair_app():
     if st.button("Sair do App"):
         st.session_state['logged_in'] = False
-        st.session_state.pop('username', None)  # Remove o usuário logado
+        st.session_state['username'] = ""  # Remove o usuário logado
         st.rerun()  # Reinicia a aplicação
 
 def menu_principal():
