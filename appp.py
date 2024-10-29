@@ -146,6 +146,8 @@ def tela_login():
     # Inicializa o session_state para o username e senha
     if 'username' not in st.session_state:
         st.session_state['username'] = ""
+    if 'logged_in' not in st.session_state:
+        st.session_state['logged_in'] = False
 
     # Widgets para o login
     username = st.text_input("Usuário", key="username")
@@ -211,7 +213,7 @@ def tela_cadastro():
                      key=f"capacidade_extintor_{i}")
 
         # Botão para excluir o extintor
-        if st.button(f"Excluir Extintor {i + 1}"):
+        if st.button(f"Excluir Extintor {i + 1}", key=f"excluir_extintor_{i}"):
             st.session_state.extintores.pop(i)  # Remove o extintor
             st.rerun()  # Atualiza a tela
 
