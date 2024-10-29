@@ -214,6 +214,10 @@ def tela_cadastro():
     st.subheader("Cadastro de Extintores")
     tipos_extintores = st.session_state.get('extintores', [])  # Recupera a lista de extintores da sessão
 
+    # Listas de tipos de extintores e capacidades
+    lista_tipos_extintores = ["Tipo A", "Tipo B", "Tipo C"]  # Exemplo de tipos de extintores
+    lista_capacidades_extintores = [1.0, 2.0, 4.0, 6.0, 9.0, 12.0]  # Exemplo de capacidades em litros
+
     def adicionar_extintor(tipo_extintor, quantidade_extintor, capacidade_extintor):
         tipos_extintores.append({
             'tipo': tipo_extintor,
@@ -229,9 +233,10 @@ def tela_cadastro():
             st.success("Extintor removido com sucesso!")
 
     # Mostrar campos para adicionar um novo extintor
-    tipo_extintor = st.text_input("Tipo do Extintor", key="tipo_extintor")
+    tipo_extintor = st.selectbox("Tipo do Extintor", lista_tipos_extintores, key="tipo_extintor")
     quantidade_extintor = st.number_input("Quantidade do Extintor", min_value=1, step=1, key="quantidade_extintor")
-    capacidade_extintor = st.number_input("Capacidade do Extintor (litros)", min_value=1.0, step=0.1, key="capacidade_extintor")
+    capacidade_extintor = st.selectbox("Capacidade do Extintor (litros)", lista_capacidades_extintores,
+                                       key="capacidade_extintor")
 
     if st.button("Adicionar Extintor"):
         adicionar_extintor(tipo_extintor, quantidade_extintor, capacidade_extintor)
@@ -241,7 +246,8 @@ def tela_cadastro():
     for i, extintor in enumerate(tipos_extintores):
         col1, col2 = st.columns([3, 1])
         with col1:
-            st.write(f"Extintor {i + 1}: Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']}, Capacidade: {extintor['capacidade']}")
+            st.write(f"Extintor {i + 1}: Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']},"
+                     f"Capacidade: {extintor['capacidade']}")
         with col2:
             if st.button(f"Remover {i + 1}"):
                 excluir_extintor(i)
@@ -271,8 +277,10 @@ def tela_excluir_empresa():
     st.header("Excluir Empresa")
     empresas = listar_empresas()
     if empresas:
-        empresa_para_excluir = st.selectbox("Selecione a empresa para excluir",
-                                             [empresa['nome_empresa'] for empresa in empresas])
+        # Cria uma lista com os nomes das empresas para o selectbox
+        nomes_empresas = [empresa['nome_empresa'] for empresa in empresas]
+        empresa_para_excluir = st.selectbox("Selecione a empresa para excluir", nomes_empresas)
+
         if st.button("Excluir Empresa"):
             db = criar_conexao()
             if db is None:
@@ -280,8 +288,11 @@ def tela_excluir_empresa():
 
             # Remove a empresa selecionada
             try:
-                db.empresas.delete_one({"nome_empresa": empresa_para_excluir})
-                st.success("Empresa excluída com sucesso!")
+                resultado = db.empresas.delete_one({"nome_empresa": empresa_para_excluir})
+                if resultado.deleted_count > 0:
+                    st.success("Empresa excluída com sucesso!")
+                else:
+                    st.warning("Nenhuma empresa encontrada com o nome selecionado.")
                 st.rerun()  # Atualiza a página após a exclusão
             except Exception as e:
                 st.error(f"Erro ao excluir a empresa: {e}")
