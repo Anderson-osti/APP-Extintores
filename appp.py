@@ -3,7 +3,6 @@ from pymongo import MongoClient
 from datetime import datetime, timedelta
 from fpdf import FPDF
 
-
 # Conectar ao MongoDB
 def criar_conexao():
     try:
@@ -14,7 +13,6 @@ def criar_conexao():
         st.error(f"Erro ao conectar ao MongoDB: {e}")
         return None
 
-
 def verificar_usuario(username, senha):
     # Usuários permitidos
     usuarios_permitidos = {
@@ -22,7 +20,6 @@ def verificar_usuario(username, senha):
         st.secrets["USUARIO2"]: st.secrets["SENHA2"]
     }
     return usuarios_permitidos.get(username) == senha
-
 
 def cadastrar_empresa(nome_empresa, endereco, extintores, data_cadastro):
     db = criar_conexao()
@@ -44,7 +41,6 @@ def cadastrar_empresa(nome_empresa, endereco, extintores, data_cadastro):
     except Exception as e:
         st.error(f"Erro ao cadastrar empresa: {e}")
 
-
 def gerar_relatorio_vencimento(data_inicio, data_fim):
     db = criar_conexao()
     if db is None:
@@ -57,22 +53,13 @@ def gerar_relatorio_vencimento(data_inicio, data_fim):
             st.write("Empresas com extintores próximos do vencimento:")
             for empresa in empresas_list:
                 st.write(
-                    f"Nome: {empresa['nome_empresa']}, Endereço: {empresa['endereco']}, "
-                    f"Data de Cadastro: {empresa['data_cadastro']}"
+                    f"Nome: {empresa['nome_empresa']}, Data de Cadastro: {empresa['data_cadastro']}"
                 )
-
-                # Exibe os extintores associados à empresa
-                for extintor in empresa.get('extintores', []):
-                    st.write(
-                        f"  Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']}, "
-                        f"Capacidade: {extintor['capacidade']}"
-                    )
             gerar_pdf(empresas_list)
         else:
             st.write("Nenhuma empresa com extintores próximos do vencimento.")
     except Exception as e:
         st.error(f"Erro ao gerar relatório: {e}")
-
 
 def gerar_pdf(empresas):
     class PDF(FPDF):
@@ -108,14 +95,6 @@ def gerar_pdf(empresas):
         )
         pdf.chapter_body(body)
 
-        for extintor in empresa.get('extintores', []):
-            body_extintor = (
-                f"  Tipo: {extintor['tipo']}\n"
-                f"  Quantidade: {extintor['quantidade']}\n"
-                f"  Capacidade: {extintor['capacidade']}\n"
-            )
-            pdf.chapter_body(body_extintor)
-
     pdf_file = "relatorio_vencimento.pdf"
     pdf.output(pdf_file)
 
@@ -127,7 +106,6 @@ def gerar_pdf(empresas):
             mime="application/octet-stream"
         )
     st.success("PDF gerado com sucesso!")
-
 
 def listar_empresas():
     db = criar_conexao()
@@ -141,31 +119,11 @@ def listar_empresas():
         st.error(f"Erro ao listar empresas: {e}")
         return []
 
-
-def tela_login():
-    st.image('logo.png', width=100)  # Adicionando o logotipo
-    st.title("Login FIRECHECK")
-
-    # Widgets para o login
-    if 'username' not in st.session_state:
-        st.session_state['username'] = ""
-    username = st.text_input("Usuário", key="username")
-    senha = st.text_input("Senha", type="password", key="senha")
-
-    if st.button("Login"):
-        if verificar_usuario(username, senha):
-            st.session_state['logged_in'] = True
-            st.rerun()  # Reinicia a aplicação para carregar o menu principal
-        else:
-            st.error("Usuário ou senha incorretos.")
-
-
 def sair_app():
     if st.button("Sair do App"):
         st.session_state['logged_in'] = False
         st.session_state.pop('username', None)  # Remove o usuário logado
         st.rerun()  # Reinicia a aplicação
-
 
 def menu_principal():
     st.sidebar.title("Menu")
@@ -183,21 +141,12 @@ def menu_principal():
             st.header("Empresas Cadastradas")
             for empresa in empresas:
                 st.write(
-                    f"Nome: {empresa['nome_empresa']}, Endereço: {empresa['endereco']}, "
-                    f"Data de Cadastro: {empresa['data_cadastro']}"
+                    f"Nome: {empresa['nome_empresa']}, Data de Cadastro: {empresa['data_cadastro']}"
                 )
-
-                # Exibe os extintores associados à empresa
-                for extintor in empresa.get('extintores', []):
-                    st.write(
-                        f"  Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']}, "
-                        f"Capacidade: {extintor['capacidade']}"
-                    )
         else:
             st.warning("Nenhuma empresa cadastrada.")
     elif opcao == "Excluir Empresa":
         tela_excluir_empresa()
-
 
 def tela_cadastro():
     st.header("Cadastro de Empresa")
@@ -239,7 +188,6 @@ def tela_cadastro():
         else:
             st.error("Por favor, preencha todos os campos obrigatórios.")
 
-
 def tela_relatorio():
     st.header("Gerar Relatório de Vencimento")
     data_inicio = st.date_input("Data de Início", datetime.now() - timedelta(days=365), key="data_inicio")
@@ -251,7 +199,6 @@ def tela_relatorio():
         else:
             st.error("A data de início deve ser anterior à data de fim.")
 
-
 def excluir_empresa(nome_empresa):
     db = criar_conexao()
     if db is None:
@@ -261,7 +208,6 @@ def excluir_empresa(nome_empresa):
         st.success(f"Empresa '{nome_empresa}' excluída com sucesso.")
     except Exception as e:
         st.error(f"Erro ao excluir empresa: {e}")
-
 
 def tela_excluir_empresa():
     st.header("Excluir Empresa")
@@ -277,6 +223,22 @@ def tela_excluir_empresa():
     if st.button("Excluir Empresa"):
         excluir_empresa(nome_empresa)
 
+def tela_login():
+    st.image('logo.png', width=100)  # Adicionando o logotipo
+    st.title("Login FIRECHECK")
+
+    # Widgets para o login
+    if 'username' not in st.session_state:
+        st.session_state['username'] = ""
+    username = st.text_input("Usuário", key="username")
+    senha = st.text_input("Senha", type="password", key="senha")
+
+    if st.button("Login"):
+        if verificar_usuario(username, senha):
+            st.session_state['logged_in'] = True
+            st.rerun()  # Reinicia a aplicação para carregar o menu principal
+        else:
+            st.error("Usuário ou senha incorretos.")
 
 if __name__ == "__main__":
     if 'logged_in' not in st.session_state:
