@@ -200,7 +200,7 @@ def main():
     st.set_page_config(page_title="Gerenciador de Extintores", layout="wide")
 
     # Adicionando a logomarca
-    st.image("firecheck/logo.png", width=200)  # Atualize o caminho da imagem conforme necessário
+    st.image("logo.png", width=200)  # Atualize o caminho da imagem conforme necessário
 
     if 'logged_in' not in st.session_state:
         st.session_state['logged_in'] = False
