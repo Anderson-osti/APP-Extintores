@@ -151,7 +151,7 @@ def listar_empresas():
 
 def tela_login():
     st.image('logo.png', width=100)  # Adicionando o logotipo
-    st.title("Login FIRECHECK")
+    st.title("Login Décio Extintores")
 
     # Widgets para o login
     if 'username' not in st.session_state:  # Verifica se o 'username' já está no session_state
@@ -215,8 +215,8 @@ def tela_cadastro():
     tipos_extintores = st.session_state.get('extintores', [])  # Recupera a lista de extintores da sessão
 
     # Listas de tipos de extintores e capacidades
-    lista_tipos_extintores = ["Tipo A", "Tipo B", "Tipo C"]  # Exemplo de tipos de extintores
-    lista_capacidades_extintores = [1.0, 2.0, 4.0, 6.0, 9.0, 12.0]  # Exemplo de capacidades em litros
+    lista_tipos_extintores = ["Pó ABC", "Pó BC", "CÓ2 Dióxido de Carbono", "Água"]  # Exemplo de tipos de extintores
+    lista_capacidades_extintores = [4.0, 6.0, 8.0, 9.0, 10.0, 12.0]  # Exemplo de capacidades em litros
 
     def adicionar_extintor(tipo_extintor, quantidade_extintor, capacidade_extintor):
         tipos_extintores.append({
