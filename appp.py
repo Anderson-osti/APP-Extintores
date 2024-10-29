@@ -154,15 +154,18 @@ def tela_login():
     st.title("Login FIRECHECK")
 
     # Widgets para o login
-    username = st.text_input("Usuário", key="username")
-    senha = st.text_input("Senha", type="password", key="senha")
+    if 'username' not in st.session_state:  # Verifica se o 'username' já está no session_state
+        st.session_state['username'] = ''  # Inicializa o 'username' como string vazia
+
+    username = st.text_input("Usuário", key="username_input")
+    senha = st.text_input("Senha", type="password", key="senha_input")
 
     if st.button("Login"):
         if verificar_usuario(username, senha):
             st.session_state['logged_in'] = True
             st.session_state['extintores'] = []  # Limpa a lista de extintores na sessão
-            st.success("Login realizado com sucesso!")
             st.session_state['username'] = username  # Armazena o usuário logado
+            st.success("Login realizado com sucesso!")
             st.rerun()  # Atualiza a página após o login
         else:
             st.error("Usuário ou senha incorretos.")
@@ -174,7 +177,7 @@ def sair_app():
         st.session_state.pop('username', None)  # Remove o usuário logado
         st.session_state.pop('extintores', None)  # Remove a lista de extintores
         st.success("Logout realizado com sucesso!")
-        st.rerun()  # Atualiza a página após o logout
+        st.rerun()  # Atualiza a página após a exclusão
 
 
 def menu_principal():
@@ -218,7 +221,6 @@ def tela_cadastro():
             'capacidade': capacidade_extintor
         })
         st.session_state['extintores'] = tipos_extintores  # Atualiza a sessão
-        st.success("Extintor adicionado com sucesso!")
 
     def excluir_extintor(index):
         if 0 <= index < len(tipos_extintores):
@@ -227,9 +229,9 @@ def tela_cadastro():
             st.success("Extintor removido com sucesso!")
 
     # Mostrar campos para adicionar um novo extintor
-    tipo_extintor = st.text_input("Tipo do Extintor")
-    quantidade_extintor = st.number_input("Quantidade do Extintor", min_value=1, step=1)
-    capacidade_extintor = st.number_input("Capacidade do Extintor (litros)", min_value=1.0, step=0.1)
+    tipo_extintor = st.text_input("Tipo do Extintor", key="tipo_extintor")
+    quantidade_extintor = st.number_input("Quantidade do Extintor", min_value=1, step=1, key="quantidade_extintor")
+    capacidade_extintor = st.number_input("Capacidade do Extintor (litros)", min_value=1.0, step=0.1, key="capacidade_extintor")
 
     if st.button("Adicionar Extintor"):
         adicionar_extintor(tipo_extintor, quantidade_extintor, capacidade_extintor)
