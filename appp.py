@@ -42,6 +42,7 @@ def cadastrar_empresa(nome_empresa, endereco, extintores, data_cadastro, usuario
         }
         db.empresas.insert_one(empresa)
         st.success("Empresa cadastrada com sucesso!")
+        st.session_state['extintores'] = []  # Limpa a lista de extintores após o cadastro
         st.rerun()  # Atualiza a página após o cadastro
     except Exception as e:
         st.error(f"Erro ao cadastrar empresa: {e}")
