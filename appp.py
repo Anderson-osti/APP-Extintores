@@ -24,7 +24,7 @@ def verificar_usuario(username, senha):
     return usuarios_permitidos.get(username) == senha
 
 
-def cadastrar_empresa(nome_empresa, endereco, extintores, data_cadastro, usuario_cadastrador):
+def cadastrar_empresa(nome_empresa, endereco, cidade, extintores, data_cadastro, usuario_cadastrador):
     db = criar_conexao()
     if db is None:
         return
@@ -36,6 +36,7 @@ def cadastrar_empresa(nome_empresa, endereco, extintores, data_cadastro, usuario
         empresa = {
             "nome_empresa": nome_empresa,
             "endereco": endereco,
+            "cidade": cidade,  # Armazenando a cidade
             "extintores": extintores,
             "data_cadastro": data_cadastro_iso,  # Armazenando como string ISO
             "usuario_cadastrador": usuario_cadastrador  # Adicionando o usuário que cadastrou
@@ -89,6 +90,7 @@ def gerar_pdf(empresas):
         linha_empresa = (
             f"Empresa: {empresa['nome_empresa']} | "
             f"Endereço: {empresa['endereco']} | "
+            f"Cidade: {empresa['cidade']} | "  # Adiciona a cidade
             f"Data de Cadastro: {empresa['data_cadastro']} | "
         )
         pdf.cell(0, 10, linha_empresa, 0, 1)
@@ -177,7 +179,7 @@ def menu_principal():
             for empresa in empresas:
                 st.write(
                     f"Nome: {empresa['nome_empresa']}, Endereço: {empresa['endereco']}, "
-                    f"Data de Cadastro: {empresa['data_cadastro']}"
+                    f"Cidade: {empresa['cidade']}, Data de Cadastro: {empresa['data_cadastro']}"
                 )
         else:
             st.warning("Nenhuma empresa cadastrada.")
@@ -189,6 +191,7 @@ def tela_cadastro():
     st.header("Cadastro de Empresa")
     nome_empresa = st.text_input("Nome da Empresa", key="nome_empresa")
     endereco = st.text_input("Endereço", key="endereco")
+    cidade = st.text_input("Cidade", key="cidade")  # Novo campo para a cidade
 
     # Permitir cadastrar apenas um tipo de extintor
     st.subheader("Cadastro de Extintores")
@@ -218,11 +221,11 @@ def tela_cadastro():
             f"Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']}, Capacidade: {extintor['capacidade']}")
 
     if st.button("Cadastrar Empresa"):
-        if nome_empresa and endereco and len(
+        if nome_empresa and endereco and cidade and len(
                 st.session_state.get('extintores', [])) > 0:  # Verifica se há extintores cadastrados
             data_cadastro = datetime.now()
             usuario_cadastrador = st.session_state['username']
-            cadastrar_empresa(nome_empresa, endereco, st.session_state['extintores'], data_cadastro,
+            cadastrar_empresa(nome_empresa, endereco, cidade, st.session_state['extintores'], data_cadastro,
                               usuario_cadastrador)
         else:
             st.warning("Por favor, preencha todos os campos e adicione um extintor.")
