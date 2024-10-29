@@ -143,9 +143,11 @@ def tela_login():
     st.image('logo.png', width=100)  # Adicionando o logotipo
     st.title("Login FIRECHECK")
 
-    # Widgets para o login
+    # Inicializa o session_state para o username e senha
     if 'username' not in st.session_state:
         st.session_state['username'] = ""
+
+    # Widgets para o login
     username = st.text_input("Usuário", key="username")
     senha = st.text_input("Senha", type="password", key="senha")
 
@@ -208,11 +210,12 @@ def tela_cadastro():
                      index=["4 kg", "6 kg", "9 kg", "12 kg", "6 L", "10 L"].index(extintor['capacidade']),
                      key=f"capacidade_extintor_{i}")
 
-        # Botão para remover o extintor
-        if st.button(f"Remover Extintor {i + 1}", key=f"remove_extintor_{i}"):
-            st.session_state.extintores.pop(i)  # Remove o extintor da lista
+        # Botão para excluir o extintor
+        if st.button(f"Excluir Extintor {i + 1}"):
+            st.session_state.extintores.pop(i)  # Remove o extintor
             st.rerun()  # Atualiza a tela
 
+    st.subheader("Adicionar Extintor")
     # Adiciona novo extintor
     if st.button("Adicionar Extintor"):
         st.session_state.extintores.append({'tipo': 'Água', 'quantidade': 1, 'capacidade': '4 kg'})  # Adiciona um extintor padrão
@@ -262,8 +265,8 @@ def tela_excluir_empresa():
     if st.button("Excluir Empresa"):
         excluir_empresa(nome_empresa)
 
-
 if __name__ == "__main__":
+    # Verifica se o usuário está logado
     if 'logged_in' not in st.session_state:
         st.session_state['logged_in'] = False
 
