@@ -61,19 +61,6 @@ def gerar_relatorio_vencimento(data_inicio, data_fim):
         })
         empresas_list = list(empresas)
         if empresas_list:
-            st.write("Empresas com extintores próximos do vencimento:")
-            for empresa in empresas_list:
-                st.write(
-                    f"Nome: {empresa['nome_empresa']}, Endereço: {empresa['endereco']}, "
-                    f"Data de Cadastro: {empresa['data_cadastro']}"
-                )
-
-                # Exibe os extintores associados à empresa
-                for extintor in empresa.get('extintores', []):
-                    st.write(
-                        f"  Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']}, "
-                        f"Capacidade: {extintor['capacidade']}"
-                    )
             gerar_pdf(empresas_list)
         else:
             st.write("Nenhuma empresa com extintores próximos do vencimento.")
@@ -111,7 +98,7 @@ def gerar_pdf(empresas):
         pdf.chapter_title(f"Empresa: {empresa['nome_empresa']}")
         body = (
             f"Endereço: {empresa['endereco']}\n"
-            f"Data de Cadastro: {empresa['data_cadastro']}"
+            f"Data de Cadastro: {empresa['data_cadastro']}\n"
         )
         pdf.chapter_body(body)
 
@@ -239,7 +226,8 @@ def tela_cadastro():
             f"Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']}, Capacidade: {extintor['capacidade']}")
 
     if st.button("Cadastrar Empresa"):
-        if nome_empresa and endereco and st.session_state.get('extintores'):  # Verifica se há extintores cadastrados
+        if nome_empresa and endereco and len(
+                st.session_state.get('extintores', [])) > 0:  # Verifica se há extintores cadastrados
             data_cadastro = datetime.now()
             usuario_cadastrador = st.session_state['username']
             cadastrar_empresa(nome_empresa, endereco, st.session_state['extintores'], data_cadastro,
