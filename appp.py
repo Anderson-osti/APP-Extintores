@@ -80,35 +80,27 @@ def gerar_pdf(empresas):
             self.set_font('Arial', 'I', 8)
             self.cell(0, 10, f'Página {self.page_no()}', 0, 0, 'C')
 
-        def chapter_title(self, title):
-            self.set_font('Arial', 'B', 12)
-            self.cell(0, 10, title, 0, 1, 'L')
-            self.ln(5)
-
-        def chapter_body(self, body):
-            self.set_font('Arial', '', 12)
-            self.multi_cell(0, 10, body)
-            self.ln()
-
     pdf = PDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
 
     for empresa in empresas:
-        pdf.chapter_title(f"Empresa: {empresa['nome_empresa']}")
-        body = (
-            f"Endereço: {empresa['endereco']}\n"
-            f"Data de Cadastro: {empresa['data_cadastro']}\n"
+        # Informações da empresa em uma única linha
+        linha_empresa = (
+            f"Empresa: {empresa['nome_empresa']} | "
+            f"Endereço: {empresa['endereco']} | "
+            f"Data de Cadastro: {empresa['data_cadastro']} | "
         )
-        pdf.chapter_body(body)
+        pdf.cell(0, 10, linha_empresa, 0, 1)
 
+        # Adiciona os extintores em uma linha
         for extintor in empresa.get('extintores', []):
-            body_extintor = (
-                f"  Tipo: {extintor['tipo']}\n"
-                f"  Quantidade: {extintor['quantidade']}\n"
-                f"  Capacidade: {extintor['capacidade']}\n"
+            linha_extintor = (
+                f"  Tipo: {extintor['tipo']} | "
+                f"  Quantidade: {extintor['quantidade']} | "
+                f"  Capacidade: {extintor['capacidade']} | "
             )
-            pdf.chapter_body(body_extintor)
+            pdf.cell(0, 10, linha_extintor, 0, 1)
 
     pdf_file = "relatorio_vencimento.pdf"
     pdf.output(pdf_file)
