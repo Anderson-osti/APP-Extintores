@@ -154,17 +154,15 @@ def tela_login():
     st.title("Login FIRECHECK")
 
     # Widgets para o login
-    if 'username' not in st.session_state:
-        st.session_state['username'] = ""
     username = st.text_input("Usuário", key="username")
     senha = st.text_input("Senha", type="password", key="senha")
 
     if st.button("Login"):
         if verificar_usuario(username, senha):
             st.session_state['logged_in'] = True
-            st.session_state['username'] = username  # Armazena o usuário logado
             st.session_state['extintores'] = []  # Limpa a lista de extintores na sessão
             st.success("Login realizado com sucesso!")
+            st.session_state['username'] = username  # Armazena o usuário logado
             st.rerun()  # Atualiza a página após o login
         else:
             st.error("Usuário ou senha incorretos.")
