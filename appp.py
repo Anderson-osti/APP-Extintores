@@ -3,7 +3,6 @@ from pymongo import MongoClient
 from datetime import datetime, timedelta
 from fpdf import FPDF
 
-
 # Conectar ao MongoDB
 def criar_conexao():
     try:
@@ -24,14 +23,14 @@ def verificar_usuario(username, senha):
     return usuarios_permitidos.get(username) == senha
 
 
-def cadastrar_empresa(nome_empresa, endereco, extintores, data_cadastro):
+def cadastrar_empresa(nome_empresa, endereco, extintores):
     db = criar_conexao()
     if db is None:
         return
 
     try:
         # Converte a data para o formato ISO antes de armazenar
-        data_cadastro_iso = data_cadastro.isoformat()  # Formato: 'YYYY-MM-DD'
+        data_cadastro_iso = datetime.now().isoformat()  # Formato: 'YYYY-MM-DD'
 
         empresa = {
             "nome_empresa": nome_empresa,
@@ -193,83 +192,79 @@ def tela_cadastro():
 
     # Permitir cadastrar múltiplos tipos de extintores
     st.subheader("Cadastro de Extintores")
-    extintor_index = len(st.session_state['tipos_extintores'])  # Usa o comprimento da lista para o índice
 
-    while True:
-        tipo_extintor = st.selectbox("Tipo de Extintor", ["Água", "Pó Químico (BC)",
-                                                          "Pó Químico (ABC)", "CO2", "Espuma"],
-                                     key=f"tipo_extintor_{extintor_index}")
-        quantidade_extintor = st.number_input("Quantidade de Extintores", min_value=1, step=1,
-                                              key=f"quantidade_extintor_{extintor_index}")
-        capacidade_extintor = st.selectbox("Capacidade do Extintor", ["4 kg", "6 kg", "9 kg", "12 kg", "6 L", "10 L"],
-                                           key=f"capacidade_extintor_{extintor_index}")
+    if st.session_state['tipos_extintores']:
+        for i, extintor in enumerate(st.session_state['tipos_extintores']):
+            st.write(f"Extintor {i + 1}: Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']}, Capacidade: {extintor['capacidade']}")
+            if st.button(f"Remover Extintor {i + 1}", key=f"remove_extintor_{i}"):
+                st.session_state['tipos_extintores'].pop(i)  # Remove o extintor da lista
+                st.experimental_rerun()  # Atualiza a página para refletir a remoção
 
-        # Armazena os dados do extintor
-        if st.button("Adicionar Outro Extintor", key=f"add_extintor_{extintor_index}"):
-            # Adiciona os dados atuais à lista de extintores
-            st.session_state['tipos_extintores'].append({
-                'tipo': tipo_extintor,
-                'quantidade': quantidade_extintor,
-                'capacidade': capacidade_extintor
-            })
-            extintor_index += 1  # Incrementa o índice para o próximo extintor
-            continue
-        else:
-            break
+    # Adicionar novo extintor
+    tipo_extintor = st.selectbox("Tipo de Extintor", ["Água", "Pó Químico (BC)",
+                                                      "Pó Químico (ABC)", "CO2", "Espuma"],
+                                 key="novo_tipo_extintor")
+    quantidade_extintor = st.number_input("Quantidade de Extintores", min_value=1, step=1,
+                                          key="nova_quantidade_extintor")
+    capacidade_extintor = st.selectbox("Capacidade do Extintor", ["4 kg", "6 kg", "9 kg", "12 kg", "6 L", "10 L"],
+                                       key="nova_capacidade_extintor")
 
-    # Exibe os extintores já adicionados
-    for i, extintor in enumerate(st.session_state['tipos_extintores']):
-        st.write(f"Extintor {i + 1}: Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']},"
-                 f"Capacidade: {extintor['capacidade']}")
+    if st.button("Adicionar Extintor"):
+        # Adiciona os dados atuais à lista de extintores
+        st.session_state['tipos_extintores'].append({
+            'tipo': tipo_extintor,
+            'quantidade': quantidade_extintor,
+            'capacidade': capacidade_extintor
+        })
+        st.experimental_rerun()  # Atualiza a página para refletir a adição
 
     if st.button("Cadastrar Empresa"):
-        data_cadastro = datetime.now()
-        cadastrar_empresa(nome_empresa, endereco, st.session_state['tipos_extintores'], data_cadastro)
+        # Verifica se existem extintores antes de cadastrar a empresa
+        if st.session_state['tipos_extintores']:
+            cadastrar_empresa(nome_empresa, endereco, st.session_state['tipos_extintores'])
+            st.session_state['tipos_extintores'] = []  # Limpa a lista de extintores após o cadastro
+        else:
+            st.warning("Adicione pelo menos um extintor antes de cadastrar a empresa.")
 
 
 def tela_relatorio():
     st.header("Gerar Relatório de Vencimento")
-
-    data_inicio = st.date_input("Data de Início", datetime.now().date())
-    data_fim = st.date_input("Data de Fim", datetime.now().date() + timedelta(days=30))
+    data_inicio = st.date_input("Data de Início", datetime.now() - timedelta(days=30))
+    data_fim = st.date_input("Data de Fim", datetime.now())
 
     if st.button("Gerar Relatório"):
         gerar_relatorio_vencimento(data_inicio, data_fim)
 
 
-def excluir_empresa(nome_empresa):
-    db = criar_conexao()
-    if db is None:
-        return
-    try:
-        db.empresas.delete_one({"nome_empresa": nome_empresa,
-                                "usuario": st.session_state['username']})  # Exclui apenas se pertencer ao usuário
-        st.success(f"Empresa '{nome_empresa}' excluída com sucesso.")
-    except Exception as e:
-        st.error(f"Erro ao excluir empresa: {e}")
-
-
 def tela_excluir_empresa():
     st.header("Excluir Empresa")
-    empresas = listar_empresas()
+    empresas = listar_empresas()  # Chama a função para listar empresas
+    if empresas:  # Verifica se existem empresas para exibir
+        nome_empresa_para_excluir = st.selectbox("Escolha a empresa para excluir", [empresa['nome_empresa'] for empresa in empresas])
 
-    if not empresas:
+        if st.button("Excluir Empresa"):
+            db = criar_conexao()
+            if db is not None:
+                try:
+                    db.empresas.delete_one({"nome_empresa": nome_empresa_para_excluir, "usuario": st.session_state['username']})
+                    st.success("Empresa excluída com sucesso!")
+                    st.experimental_rerun()  # Atualiza a página para refletir a exclusão
+                except Exception as e:
+                    st.error(f"Erro ao excluir a empresa: {e}")
+    else:
         st.warning("Nenhuma empresa cadastrada para excluir.")
-        return
-
-    nomes_empresas = [empresa['nome_empresa'] for empresa in empresas]
-    nome_empresa = st.selectbox("Selecione a Empresa a ser excluída", nomes_empresas, key="nome_empresa_excluir")
-
-    if st.button("Excluir Empresa"):
-        excluir_empresa(nome_empresa)
 
 
-if __name__ == "__main__":
+def main():
     if 'logged_in' not in st.session_state:
         st.session_state['logged_in'] = False
 
     if st.session_state['logged_in']:
         menu_principal()
-        sair_app()  # Adiciona o botão de sair
+        sair_app()  # Botão para sair do app
     else:
         tela_login()
+
+
+if __name__ == "__main__":
+    main()
