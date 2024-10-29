@@ -178,21 +178,13 @@ def menu_principal():
     elif opcao == "Gerar Relatório de Vencimento":
         tela_relatorio()
     elif opcao == "Listar Empresas Cadastradas":
-        empresas = listar_empresas()  # Chama a função para listar empresas
-        if empresas:  # Verifica se existem empresas para exibir
+        empresas = listar_empresas()
+        if empresas:
             st.header("Empresas Cadastradas")
             for empresa in empresas:
                 st.write(
-                    f"Nome: {empresa['nome_empresa']}, Endereço: {empresa['endereco']}, "
-                    f"Data de Cadastro: {empresa['data_cadastro']}"
+                    f"Nome: {empresa['nome_empresa']}, Próximo Vencimento dos Extintores: {empresa['data_cadastro']}"
                 )
-
-                # Exibe os extintores associados à empresa
-                for extintor in empresa.get('extintores', []):
-                    st.write(
-                        f"  Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']}, "
-                        f"Capacidade: {extintor['capacidade']}"
-                    )
         else:
             st.warning("Nenhuma empresa cadastrada.")
     elif opcao == "Excluir Empresa":
@@ -204,38 +196,33 @@ def tela_cadastro():
     nome_empresa = st.text_input("Nome da Empresa", key="nome_empresa")
     endereco = st.text_input("Endereço", key="endereco")
 
-    # Permitir cadastrar múltiplos tipos de extintores
+    # Inicializar a lista de extintores no `session_state`
+    if "extintores" not in st.session_state:
+        st.session_state.extintores = []
+
     st.subheader("Cadastro de Extintores")
-    tipos_extintores = []
-    extintor_index = 0  # Índice para garantir chaves únicas
+    tipo_extintor = st.selectbox("Tipo de Extintor", ["Água", "Pó Químico (BC)", "Pó Químico (ABC)", "CO2", "Espuma"])
+    quantidade_extintor = st.number_input("Quantidade de Extintores", min_value=1, step=1)
+    capacidade_extintor = st.selectbox("Capacidade do Extintor", ["4 kg", "6 kg", "9 kg", "12 kg", "6 L", "10 L"])
 
-    while True:
-        tipo_extintor = st.selectbox("Tipo de Extintor", ["Água", "Pó Químico (BC)",
-                                                          "Pó Químico (ABC)", "CO2", "Espuma"],
-                                     key=f"tipo_extintor_{extintor_index}")
-        quantidade_extintor = st.number_input("Quantidade de Extintores", min_value=1, step=1,
-                                              key=f"quantidade_extintor_{extintor_index}")
-        capacidade_extintor = st.selectbox("Capacidade do Extintor", ["4 kg", "6 kg", "9 kg", "12 kg", "6 L", "10 L"],
-                                           key=f"capacidade_extintor_{extintor_index}")
-
-        # Armazena os dados do extintor
-        tipos_extintores.append({
+    if st.button("Adicionar extintor"):
+        st.session_state.extintores.append({
             'tipo': tipo_extintor,
             'quantidade': quantidade_extintor,
             'capacidade': capacidade_extintor
         })
+        st.success("Extintor adicionado com sucesso!")
 
-        if st.button("Adicionar outro extintor", key=f"add_extintor_{extintor_index}"):
-            extintor_index += 1  # Incrementa o índice para o próximo extintor
-            continue
-        else:
-            break
+    for i, extintor in enumerate(st.session_state.extintores):
+        st.write(f"{i+1}. Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']},"
+                 f"Capacidade: {extintor['capacidade']}")
 
     data_cadastro = st.date_input("Data de Cadastro", datetime.now(), key="data_cadastro")
 
     if st.button("Cadastrar Empresa"):
         if nome_empresa and endereco:
-            cadastrar_empresa(nome_empresa, endereco, tipos_extintores, data_cadastro)
+            cadastrar_empresa(nome_empresa, endereco, st.session_state.extintores, data_cadastro)
+            st.session_state.extintores.clear()  # Limpar a lista após o cadastro
         else:
             st.error("Por favor, preencha todos os campos obrigatórios.")
 
