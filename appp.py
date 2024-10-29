@@ -32,14 +32,13 @@ def cadastrar_empresa(nome_empresa, endereco, extintores, data_cadastro):
     try:
         # Converte a data para o formato ISO antes de armazenar
         data_cadastro_iso = data_cadastro.isoformat()  # Formato: 'YYYY-MM-DD'
-        usuario_atual = st.session_state['username']  # Captura o usuário logado
 
         empresa = {
             "nome_empresa": nome_empresa,
             "endereco": endereco,
             "extintores": extintores,
             "data_cadastro": data_cadastro_iso,  # Armazenando como string ISO
-            "usuario": usuario_atual  # Armazenando o usuário que cadastrou
+            "usuario": st.session_state['username']  # Armazena o usuário que cadastrou
         }
         db.empresas.insert_one(empresa)
         st.success("Empresa cadastrada com sucesso!")
@@ -52,8 +51,7 @@ def gerar_relatorio_vencimento(data_inicio, data_fim):
     if db is None:
         return
 
-    usuario_atual = st.session_state['username']  # Captura o usuário logado
-
+    usuario_atual = st.session_state.get('username', None)  # Captura o usuário logado
     try:
         empresas = db.empresas.find({
             "data_cadastro": {"$gte": data_inicio.isoformat(), "$lte": data_fim.isoformat()},
@@ -68,6 +66,7 @@ def gerar_relatorio_vencimento(data_inicio, data_fim):
                     f"Data de Cadastro: {empresa['data_cadastro']}"
                 )
 
+                # Exibe os extintores associados à empresa
                 for extintor in empresa.get('extintores', []):
                     st.write(
                         f"  Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']}, "
@@ -138,6 +137,11 @@ def gerar_pdf(empresas):
 def listar_empresas():
     db = criar_conexao()
     if db is None:
+        return []
+
+    # Verifica se o usuário está logado e se o username está presente
+    if 'username' not in st.session_state:
+        st.error("Usuário não está logado.")
         return []
 
     usuario_atual = st.session_state['username']  # Captura o usuário logado
@@ -265,7 +269,7 @@ def excluir_empresa(nome_empresa):
     if db is None:
         return
     try:
-        db.empresas.delete_one({"nome_empresa": nome_empresa})
+        db.empresas.delete_one({"nome_empresa": nome_empresa, "usuario": st.session_state['username']})  # Filtra por usuário
         st.success(f"Empresa '{nome_empresa}' excluída com sucesso.")
     except Exception as e:
         st.error(f"Erro ao excluir empresa: {e}")
@@ -289,6 +293,7 @@ def tela_excluir_empresa():
 if __name__ == "__main__":
     if 'logged_in' not in st.session_state:
         st.session_state['logged_in'] = False
+        st.session_state['username'] = ""  # Inicializa username para evitar KeyError
 
     if st.session_state['logged_in']:
         menu_principal()
