@@ -90,7 +90,7 @@ def gerar_pdf(empresas):
         linha_empresa = (
             f"Empresa: {empresa['nome_empresa']} | "
             f"Endereço: {empresa['endereco']} | "
-            f"Cidade: {empresa['cidade']} | "  # Adiciona a cidade
+            f"Cidade: {empresa.get('cidade', 'N/A')} | "  # Usa .get() para evitar KeyError
             f"Data de Cadastro: {empresa['data_cadastro']} | "
         )
         pdf.cell(0, 10, linha_empresa, 0, 1)
@@ -179,7 +179,8 @@ def menu_principal():
             for empresa in empresas:
                 st.write(
                     f"Nome: {empresa['nome_empresa']}, Endereço: {empresa['endereco']}, "
-                    f"Cidade: {empresa['cidade']}, Data de Cadastro: {empresa['data_cadastro']}"
+                    f"Cidade: {empresa.get('cidade', 'N/A')}, Data de Cadastro: {empresa['data_cadastro']}"
+                    # Usando .get() para cidade
                 )
         else:
             st.warning("Nenhuma empresa cadastrada.")
@@ -198,19 +199,14 @@ def tela_cadastro():
 
     # Listas de tipos de extintores e capacidades
     lista_tipos_extintores = ["Pó ABC", "Pó BC", "CÓ2 Dióxido de Carbono", "Água"]
-    lista_capacidades_extintores = [4.0, 6.0, 8.0, 9.0, 10.0, 12.0]
+    lista_capacidades_extintores = ["1kg", "2kg", "5kg", "10kg", "20kg"]
 
-    # Campos para adicionar um extintor
     tipo_extintor = st.selectbox("Selecione o tipo de extintor", lista_tipos_extintores)
-    quantidade_extintor = st.number_input("Quantidade", min_value=1, step=1)
-    capacidade_extintor = st.selectbox("Selecione a capacidade (litros)", lista_capacidades_extintores)
+    quantidade_extintor = st.number_input("Quantidade", min_value=1, value=1)
+    capacidade_extintor = st.selectbox("Selecione a capacidade", lista_capacidades_extintores)
 
-    if st.button("Cadastrar Extintor"):
-        # Cria a lista de extintores apenas se ainda não existir
-        if 'extintores' not in st.session_state:
-            st.session_state['extintores'] = []
-
-        # Adiciona um extintor à lista
+    if st.button("Adicionar Extintor"):
+        # Adiciona o extintor à lista de extintores
         novo_extintor = {"tipo": tipo_extintor, "quantidade": quantidade_extintor, "capacidade": capacidade_extintor}
         st.session_state['extintores'].append(novo_extintor)
         st.success("Extintor adicionado com sucesso!")
