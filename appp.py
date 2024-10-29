@@ -218,28 +218,20 @@ def tela_cadastro():
     lista_tipos_extintores = ["Pó ABC", "Pó BC", "CÓ2 Dióxido de Carbono", "Água"]
     lista_capacidades_extintores = [4.0, 6.0, 8.0, 9.0, 10.0, 12.0]
 
-    # Evitar a sombra da variável
-    def adicionar_extintor(tipo_extintor, quantidade_extintor, capacidade_extintor):
-        tipos_extintores.append({
-            'tipo': tipo_extintor,
-            'quantidade': quantidade_extintor,
-            'capacidade': capacidade_extintor
-        })
-        st.session_state['extintores'] = tipos_extintores
-        st.success("Extintor adicionado com sucesso!")
-
     # Campos para adicionar um extintor
     tipo_extintor = st.selectbox("Selecione o tipo de extintor", lista_tipos_extintores)
     quantidade_extintor = st.number_input("Quantidade", min_value=1, step=1)
     capacidade_extintor = st.selectbox("Selecione a capacidade (litros)", lista_capacidades_extintores)
 
     if st.button("Adicionar Extintor"):
-        adicionar_extintor(tipo_extintor, quantidade_extintor, capacidade_extintor)
+        # Adiciona um extintor à lista
+        tipos_extintros = [{"tipo": tipo_extintor, "quantidade": quantidade_extintor, "capacidade": capacidade_extintor}]
+        st.session_state['extintores'] = tipos_extintros
+        st.success("Extintor adicionado com sucesso!")
 
     st.subheader("Lista de Extintores Cadastrados")
     for extintor in tipos_extintores:
-        st.write(
-            f"Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']}, Capacidade: {extintor['capacidade']}")
+        st.write(f"Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']}, Capacidade: {extintor['capacidade']}")
 
     if st.button("Cadastrar Empresa"):
         if nome_empresa and endereco and tipos_extintores:
