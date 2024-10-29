@@ -210,7 +210,7 @@ def tela_cadastro():
     nome_empresa = st.text_input("Nome da Empresa", key="nome_empresa")
     endereco = st.text_input("Endereço", key="endereco")
 
-    # Permitir cadastrar múltiplos tipos de extintores
+    # Permitir cadastrar apenas um tipo de extintor
     st.subheader("Cadastro de Extintores")
     tipos_extintores = st.session_state.get('extintores', [])  # Recupera a lista de extintores da sessão
 
@@ -219,46 +219,28 @@ def tela_cadastro():
     lista_capacidades_extintores = [4.0, 6.0, 8.0, 9.0, 10.0, 12.0]  # Exemplo de capacidades em litros
 
     def adicionar_extintor(tipo_extintor, quantidade_extintor, capacidade_extintor):
+        # Adiciona um extintor à lista
         tipos_extintores.append({
-            'tipo': tipo_extintor,
-            'quantidade': quantidade_extintor,
-            'capacidade': capacidade_extintor
+            "tipo": tipo_extintor,
+            "quantidade": quantidade_extintor,
+            "capacidade": capacidade_extintor
         })
-        st.session_state['extintores'] = tipos_extintores  # Atualiza a sessão
-
-    def excluir_extintor(index):
-        if 0 <= index < len(tipos_extintores):
-            tipos_extintores.pop(index)  # Remove o extintor da lista
-            st.session_state['extintores'] = tipos_extintores  # Atualiza a sessão
-            st.success("Extintor removido com sucesso!")
-
-    # Mostrar campos para adicionar um novo extintor
-    tipo_extintor = st.selectbox("Tipo do Extintor", lista_tipos_extintores, key="tipo_extintor")
-    quantidade_extintor = st.number_input("Quantidade do Extintor", min_value=1, step=1, key="quantidade_extintor")
-    capacidade_extintor = st.selectbox("Capacidade do Extintor (litros)", lista_capacidades_extintores,
-                                       key="capacidade_extintor")
+        st.session_state['extintores'] = tipos_extintores  # Armazena a lista atualizada na sessão
+        st.success("Extintor adicionado com sucesso!")
 
     if st.button("Adicionar Extintor"):
+        tipo_extintor = st.selectbox("Selecione o tipo de extintor", lista_tipos_extintores)
+        quantidade_extintor = st.number_input("Quantidade", min_value=1, step=1)
+        capacidade_extintor = st.selectbox("Selecione a capacidade (litros)", lista_capacidades_extintores)
+
         adicionar_extintor(tipo_extintor, quantidade_extintor, capacidade_extintor)
 
-    # Mostra a lista de extintores
-    st.subheader("Lista de Extintores Cadastrados")
-    for i, extintor in enumerate(tipos_extintores):
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            st.write(f"Extintor {i + 1}: Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']},"
-                     f"Capacidade: {extintor['capacidade']}")
-        with col2:
-            if st.button(f"Remover {i + 1}"):
-                excluir_extintor(i)
-
-    if st.button("Finalizar Cadastro"):
-        if nome_empresa and endereco and tipos_extintores:
-            data_cadastro = datetime.now()
-            usuario_logado = st.session_state['username']
-            cadastrar_empresa(nome_empresa, endereco, tipos_extintores, data_cadastro, usuario_logado)
+    if st.button("Cadastrar Empresa"):
+        if nome_empresa and endereco and tipos_extintores:  # Verifica se o nome da empresa, endereço e extintores foram preenchidos
+            data_cadastro = datetime.now()  # Captura a data atual
+            cadastrar_empresa(nome_empresa, endereco, tipos_extintores, data_cadastro, st.session_state['username'])
         else:
-            st.warning("Preencha todos os campos antes de finalizar o cadastro.")
+            st.warning("Preencha todos os campos obrigatórios.")
 
 
 def tela_relatorio():
@@ -270,47 +252,14 @@ def tela_relatorio():
         if data_inicio and data_fim:
             gerar_relatorio_vencimento(data_inicio, data_fim)
         else:
-            st.warning("Selecione as datas de início e fim.")
+            st.warning("Preencha todas as datas.")
 
 
-def tela_excluir_empresa():
-    st.header("Excluir Empresa")
-    empresas = listar_empresas()
-    if empresas:
-        # Cria uma lista com os nomes das empresas para o selectbox
-        nomes_empresas = [empresa['nome_empresa'] for empresa in empresas]
-        empresa_para_excluir = st.selectbox("Selecione a empresa para excluir", nomes_empresas)
+# Início do aplicativo
+if 'logged_in' not in st.session_state:
+    st.session_state['logged_in'] = False
 
-        if st.button("Excluir Empresa"):
-            db = criar_conexao()
-            if db is None:
-                return
-
-            # Remove a empresa selecionada
-            try:
-                resultado = db.empresas.delete_one({"nome_empresa": empresa_para_excluir})
-                if resultado.deleted_count > 0:
-                    st.success("Empresa excluída com sucesso!")
-                else:
-                    st.warning("Nenhuma empresa encontrada com o nome selecionado.")
-                st.rerun()  # Atualiza a página após a exclusão
-            except Exception as e:
-                st.error(f"Erro ao excluir a empresa: {e}")
-    else:
-        st.warning("Nenhuma empresa cadastrada.")
-
-
-# Main
-def main():
-    if 'logged_in' not in st.session_state:
-        st.session_state['logged_in'] = False
-
-    if st.session_state['logged_in']:
-        menu_principal()
-        sair_app()
-    else:
-        tela_login()
-
-
-if __name__ == "__main__":
-    main()
+if st.session_state['logged_in']:
+    menu_principal()
+else:
+    tela_login()
