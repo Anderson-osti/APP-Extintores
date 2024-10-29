@@ -71,7 +71,7 @@ def gerar_relatorio_vencimento(data_inicio, data_fim):
 
             for extintor in empresa.get('extintores', []):
                 pdf.cell(200, 10, txt=f"  Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']}, "
-                                       f"Capacidade: {extintor['capacidade']}", ln=True)
+                                      f"Capacidade: {extintor['capacidade']}", ln=True)
 
         pdf_file = "relatorio_vencimento.pdf"
         pdf.output(pdf_file)
@@ -134,12 +134,13 @@ def tela_cadastro():
 
     while True:
         # Seleção do tipo de extintor
-        tipo_extintor = st.selectbox("Tipo de Extintor", ["Água", "Pó Químico (BC)", "Pó Químico (ABC)", "CO2", "Espuma"],
-                                      key=f"tipo_extintor_{extintor_index}")
+        tipo_extintor = st.selectbox("Tipo de Extintor", ["Água", "Pó Químico (BC)",
+                                                          "Pó Químico (ABC)", "CO2", "Espuma"],
+                                     key=f"tipo_extintor_{extintor_index}")
 
         # Seleção da capacidade do extintor
         capacidade_extintor = st.selectbox("Capacidade do Extintor", ["4 kg", "6 kg", "9 kg", "12 kg", "6 L", "10 L"],
-                                             key=f"capacidade_extintor_{extintor_index}")
+                                           key=f"capacidade_extintor_{extintor_index}")
 
         quantidade_extintor = st.number_input("Quantidade de Extintores", min_value=1, step=1,
                                               key=f"quantidade_extintor_{extintor_index}")
