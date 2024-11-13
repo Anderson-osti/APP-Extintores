@@ -28,7 +28,8 @@ def cadastrar_empresa(nome_empresa, endereco, cidade, extintores, data_cadastro,
     if db is None:
         return
     try:
-        data_cadastro_iso = data_cadastro.isoformat()
+        # Converta a data para ISO 8601 para garantir que seja compatível com o MongoDB
+        data_cadastro_iso = data_cadastro.isoformat()  # .isoformat() para o formato ISO
         empresa = {
             "nome_empresa": nome_empresa,
             "endereco": endereco,
@@ -40,7 +41,6 @@ def cadastrar_empresa(nome_empresa, endereco, cidade, extintores, data_cadastro,
         db.empresas.insert_one(empresa)
         st.success("Empresa cadastrada com sucesso!")
         st.session_state['extintores'] = []
-        st.session_state['empresa_cadastrada'] = empresa  # Armazena a empresa cadastrada para exibir na lista
         st.rerun()
     except Exception as e:
         st.error(f"Erro ao cadastrar empresa: {e}")
@@ -76,7 +76,6 @@ def gerar_pdf(empresas):
             self.set_y(-15)
             self.set_font('Arial', 'I', 8)
             self.cell(0, 10, f'Página {self.page_no()}', 0, 0, 'C')
-
     pdf = PDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
@@ -144,7 +143,6 @@ def sair_app():
         st.session_state['logged_in'] = False
         st.session_state.pop('username', None)
         st.session_state.pop('extintores', None)
-        st.session_state.pop('empresa_cadastrada', None)  # Limpa a empresa cadastrada
         st.success("Logout realizado com sucesso!")
         st.rerun()
 
@@ -167,11 +165,6 @@ def menu_principal():
                     f"Nome: {empresa['nome_empresa']}, Endereço: {empresa['endereco']}, "
                     f"Cidade: {empresa.get('cidade', 'N/A')}, Data de Cadastro: {empresa['data_cadastro']}"
                 )
-            if 'empresa_cadastrada' in st.session_state:
-                empresa_nova = st.session_state['empresa_cadastrada']
-                st.write(f"Nova empresa cadastrada: {empresa_nova['nome_empresa']}, "
-                         f"Endereço: {empresa_nova['endereco']}, "
-                         f"Cidade: {empresa_nova.get('cidade', 'N/A')}, Data de Cadastro: {empresa_nova['data_cadastro']}")
         else:
             st.warning("Nenhuma empresa cadastrada.")
     elif opcao == "Excluir Empresa":
@@ -202,10 +195,10 @@ def tela_cadastro():
     st.subheader("Lista de Extintores Cadastrados")
     for i, extintor in enumerate(st.session_state.get('extintores', [])):
         st.write(
-            f"Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']},"
+            f"Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']}," 
             f"Capacidade: {extintor['capacidade']}, Data de Cadastro: {extintor['data_cadastro']}"
         )
-        if st.button(f"Excluir Extintor {i + 1}"):
+        if st.button(f"Excluir Extintor {i+1}"):
             st.session_state['extintores'].pop(i)
             st.success("Extintor removido com sucesso.")
             st.rerun()
