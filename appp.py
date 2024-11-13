@@ -3,6 +3,7 @@ from pymongo import MongoClient
 from datetime import datetime
 from fpdf import FPDF
 
+
 # Conectar ao MongoDB
 def criar_conexao():
     try:
@@ -13,12 +14,14 @@ def criar_conexao():
         st.error(f"Erro ao conectar ao MongoDB: {e}")
         return None
 
+
 def verificar_usuario(username, senha):
     usuarios_permitidos = {
         st.secrets["USUARIO1"]: st.secrets["SENHA1"],
         st.secrets["USUARIO2"]: st.secrets["SENHA2"]
     }
     return usuarios_permitidos.get(username) == senha
+
 
 def cadastrar_empresa(nome_empresa, endereco, cidade, extintores, data_cadastro, usuario_cadastrador):
     db = criar_conexao()
@@ -37,9 +40,11 @@ def cadastrar_empresa(nome_empresa, endereco, cidade, extintores, data_cadastro,
         db.empresas.insert_one(empresa)
         st.success("Empresa cadastrada com sucesso!")
         st.session_state['extintores'] = []
+        st.session_state['empresa_cadastrada'] = empresa  # Armazena a empresa cadastrada para exibir na lista
         st.rerun()
     except Exception as e:
         st.error(f"Erro ao cadastrar empresa: {e}")
+
 
 def gerar_relatorio_vencimento(data_inicio, data_fim):
     db = criar_conexao()
@@ -59,16 +64,19 @@ def gerar_relatorio_vencimento(data_inicio, data_fim):
     except Exception as e:
         st.error(f"Erro ao gerar relatório: {e}")
 
+
 def gerar_pdf(empresas):
     class PDF(FPDF):
         def header(self):
             self.set_font('Arial', 'B', 12)
             self.cell(0, 10, 'Relatório de Vencimento de Extintores', 0, 1, 'C')
             self.ln(10)
+
         def footer(self):
             self.set_y(-15)
             self.set_font('Arial', 'I', 8)
             self.cell(0, 10, f'Página {self.page_no()}', 0, 0, 'C')
+
     pdf = PDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
@@ -99,6 +107,7 @@ def gerar_pdf(empresas):
         )
     st.success("PDF gerado com sucesso!")
 
+
 def listar_empresas():
     db = criar_conexao()
     if db is None:
@@ -110,6 +119,7 @@ def listar_empresas():
     except Exception as e:
         st.error(f"Erro ao listar empresas: {e}")
         return []
+
 
 def tela_login():
     st.image('logo.png', width=100)
@@ -128,13 +138,16 @@ def tela_login():
         else:
             st.error("Usuário ou senha incorretos.")
 
+
 def sair_app():
     if st.button("Sair do App"):
         st.session_state['logged_in'] = False
         st.session_state.pop('username', None)
         st.session_state.pop('extintores', None)
+        st.session_state.pop('empresa_cadastrada', None)  # Limpa a empresa cadastrada
         st.success("Logout realizado com sucesso!")
         st.rerun()
+
 
 def menu_principal():
     st.sidebar.title("Menu")
@@ -154,10 +167,16 @@ def menu_principal():
                     f"Nome: {empresa['nome_empresa']}, Endereço: {empresa['endereco']}, "
                     f"Cidade: {empresa.get('cidade', 'N/A')}, Data de Cadastro: {empresa['data_cadastro']}"
                 )
+            if 'empresa_cadastrada' in st.session_state:
+                empresa_nova = st.session_state['empresa_cadastrada']
+                st.write(f"Nova empresa cadastrada: {empresa_nova['nome_empresa']}, "
+                         f"Endereço: {empresa_nova['endereco']}, "
+                         f"Cidade: {empresa_nova.get('cidade', 'N/A')}, Data de Cadastro: {empresa_nova['data_cadastro']}")
         else:
             st.warning("Nenhuma empresa cadastrada.")
     elif opcao == "Excluir Empresa":
         tela_excluir_empresa()
+
 
 def tela_cadastro():
     st.header("Cadastro de Empresa")
@@ -186,7 +205,7 @@ def tela_cadastro():
             f"Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']},"
             f"Capacidade: {extintor['capacidade']}, Data de Cadastro: {extintor['data_cadastro']}"
         )
-        if st.button(f"Excluir Extintor {i+1}"):
+        if st.button(f"Excluir Extintor {i + 1}"):
             st.session_state['extintores'].pop(i)
             st.success("Extintor removido com sucesso.")
             st.rerun()
@@ -194,12 +213,11 @@ def tela_cadastro():
         if nome_empresa and endereco and cidade and len(st.session_state.get('extintores', [])) > 0:
             data_cadastro = datetime.now()
             usuario_cadastrador = st.session_state['username']
-            cadastrar_empresa(nome_empresa, endereco, cidade, st.session_state['extintores'], data_cadastro, usuario_cadastrador)
-            st.session_state['extintores'] = []
-            st.success("Empresa cadastrada com sucesso!")
-            st.rerun()
+            cadastrar_empresa(nome_empresa, endereco, cidade, st.session_state['extintores'],
+                              data_cadastro, usuario_cadastrador)
         else:
             st.warning("Por favor, preencha todos os campos e adicione um extintor.")
+
 
 def tela_relatorio():
     st.header("Gerar Relatório de Vencimento")
@@ -207,6 +225,7 @@ def tela_relatorio():
     data_fim = st.date_input("Data de Fim")
     if st.button("Gerar Relatório"):
         gerar_relatorio_vencimento(data_inicio, data_fim)
+
 
 def tela_excluir_empresa():
     st.header("Excluir Empresa")
@@ -230,7 +249,7 @@ def tela_excluir_empresa():
     else:
         st.warning("Nenhuma empresa cadastrada.")
 
-# Main
+
 def main():
     if 'logged_in' not in st.session_state:
         st.session_state['logged_in'] = False
@@ -239,6 +258,7 @@ def main():
         sair_app()
     else:
         tela_login()
+
 
 if __name__ == "__main__":
     main()
