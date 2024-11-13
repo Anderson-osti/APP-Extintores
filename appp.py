@@ -28,10 +28,9 @@ def cadastrar_empresa(nome_empresa, endereco, cidade, extintores, data_cadastro,
     if db is None:
         return
     try:
-        # Convertendo data_cadastro para datetime se for datetime.date
-        if isinstance(data_cadastro, date):
+        # Garantir que data_cadastro é datetime.datetime
+        if isinstance(data_cadastro, date):  # Se for datetime.date, converte para datetime.datetime
             data_cadastro = datetime.combine(data_cadastro, datetime.min.time())
-            # Combina a data com a hora mínima (00:00)
 
         empresa = {
             "nome_empresa": nome_empresa,
@@ -55,7 +54,7 @@ def gerar_relatorio_vencimento(data_inicio, data_fim):
         return
     usuario_atual = st.session_state['username']
     try:
-        # Convertendo datas de início e fim para datetime se for datetime.date
+        # Garantir que data_inicio e data_fim são datetime.datetime
         if isinstance(data_inicio, date):
             data_inicio = datetime.combine(data_inicio, datetime.min.time())
         if isinstance(data_fim, date):
@@ -85,6 +84,7 @@ def gerar_pdf(empresas):
             self.set_y(-15)
             self.set_font('Arial', 'I', 8)
             self.cell(0, 10, f'Página {self.page_no()}', 0, 0, 'C')
+
     pdf = PDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
@@ -204,10 +204,10 @@ def tela_cadastro():
     st.subheader("Lista de Extintores Cadastrados")
     for i, extintor in enumerate(st.session_state.get('extintores', [])):
         st.write(
-            f"Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']}," 
+            f"Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']},"
             f"Capacidade: {extintor['capacidade']}, Data de Cadastro: {extintor['data_cadastro']}"
         )
-        if st.button(f"Excluir Extintor {i+1}"):
+        if st.button(f"Excluir Extintor {i + 1}"):
             st.session_state['extintores'].pop(i)
             st.success("Extintor removido com sucesso.")
             st.rerun()
