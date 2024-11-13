@@ -38,6 +38,10 @@ def cadastrar_empresa(nome_empresa, endereco, cidade, extintores, data_cadastro,
         # Converter data_cadastro para datetime se for datetime.date
         data_cadastro = converter_para_datetime(data_cadastro)
 
+        # Converter as datas dos extintores
+        for extintor in extintores:
+            extintor["data_cadastro"] = converter_para_datetime(extintor["data_cadastro"])
+
         empresa = {
             "nome_empresa": nome_empresa,
             "endereco": endereco,
