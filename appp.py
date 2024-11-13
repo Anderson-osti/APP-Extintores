@@ -204,25 +204,40 @@ def tela_cadastro():
     tipo_extintor = st.selectbox("Selecione o tipo de extintor", lista_tipos_extintores)
     quantidade_extintor = st.number_input("Quantidade", min_value=1, value=1)
     capacidade_extintor = st.selectbox("Selecione a capacidade", lista_capacidades_extintores)
+    data_cadastro_extintor = st.date_input("Data de Cadastro do Extintor", datetime.now())
 
     if st.button("Adicionar Extintor"):
-        # Adiciona o extintor à lista de extintores
-        novo_extintor = {"tipo": tipo_extintor, "quantidade": quantidade_extintor, "capacidade": capacidade_extintor}
+        # Adiciona o extintor à lista de extintores com data de cadastro
+        novo_extintor = {
+            "tipo": tipo_extintor,
+            "quantidade": quantidade_extintor,
+            "capacidade": capacidade_extintor,
+            "data_cadastro": data_cadastro_extintor
+        }
         st.session_state['extintores'].append(novo_extintor)
         st.success("Extintor adicionado com sucesso!")
 
     st.subheader("Lista de Extintores Cadastrados")
-    for extintor in st.session_state.get('extintores', []):
+    for i, extintor in enumerate(st.session_state.get('extintores', [])):
         st.write(
-            f"Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']}, Capacidade: {extintor['capacidade']}")
+            f"Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']},"
+            f"Capacidade: {extintor['capacidade']}, Data de Cadastro: {extintor['data_cadastro']}"
+        )
+        # Botão para excluir o extintor da lista
+        if st.button(f"Excluir Extintor {i+1}"):
+            st.session_state['extintores'].pop(i)
+            st.success("Extintor removido com sucesso.")
+            st.rerun()
 
     if st.button("Cadastrar Empresa"):
-        if nome_empresa and endereco and cidade and len(
-                st.session_state.get('extintores', [])) > 0:  # Verifica se há extintores cadastrados
+        if nome_empresa and endereco and cidade and len(st.session_state.get('extintores', [])) > 0:
             data_cadastro = datetime.now()
             usuario_cadastrador = st.session_state['username']
-            cadastrar_empresa(nome_empresa, endereco, cidade, st.session_state['extintores'], data_cadastro,
-                              usuario_cadastrador)
+            cadastrar_empresa(nome_empresa, endereco, cidade, st.session_state['extintores'],
+                              data_cadastro, usuario_cadastrador)
+            st.session_state['extintores'] = []  # Limpa a lista de extintores após cadastro
+            st.success("Empresa cadastrada com sucesso!")
+            st.rerun()
         else:
             st.warning("Por favor, preencha todos os campos e adicione um extintor.")
 
