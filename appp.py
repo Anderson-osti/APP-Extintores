@@ -1,6 +1,6 @@
 import streamlit as st
 from pymongo import MongoClient
-from datetime import datetime
+from datetime import datetime, date
 from fpdf import FPDF
 
 
@@ -28,11 +28,10 @@ def cadastrar_empresa(nome_empresa, endereco, cidade, extintores, data_cadastro,
     if db is None:
         return
     try:
-        # Se data_cadastro for um objeto datetime.date, converta para datetime.datetime
-        if isinstance(data_cadastro, datetime):
-            data_cadastro = data_cadastro.isoformat()  # ISO 8601 formato para compatibilidade
-        elif isinstance(data_cadastro, datetime.date):
-            data_cadastro = datetime.combine(data_cadastro, datetime.min.time()).isoformat()  # Combine com time mínimo
+        # Convertendo data_cadastro para datetime se for datetime.date
+        if isinstance(data_cadastro, date):
+            data_cadastro = datetime.combine(data_cadastro, datetime.min.time())
+            # Combina a data com a hora mínima (00:00)
 
         empresa = {
             "nome_empresa": nome_empresa,
@@ -56,9 +55,11 @@ def gerar_relatorio_vencimento(data_inicio, data_fim):
         return
     usuario_atual = st.session_state['username']
     try:
-        # Converter datas de início e fim para formato ISO
-        data_inicio = data_inicio.isoformat() if isinstance(data_inicio, datetime) else str(data_inicio)
-        data_fim = data_fim.isoformat() if isinstance(data_fim, datetime) else str(data_fim)
+        # Convertendo datas de início e fim para datetime se for datetime.date
+        if isinstance(data_inicio, date):
+            data_inicio = datetime.combine(data_inicio, datetime.min.time())
+        if isinstance(data_fim, date):
+            data_fim = datetime.combine(data_fim, datetime.min.time())
 
         empresas = db.empresas.find({
             "data_cadastro": {"$gte": data_inicio, "$lte": data_fim},
@@ -84,7 +85,6 @@ def gerar_pdf(empresas):
             self.set_y(-15)
             self.set_font('Arial', 'I', 8)
             self.cell(0, 10, f'Página {self.page_no()}', 0, 0, 'C')
-
     pdf = PDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
@@ -204,10 +204,10 @@ def tela_cadastro():
     st.subheader("Lista de Extintores Cadastrados")
     for i, extintor in enumerate(st.session_state.get('extintores', [])):
         st.write(
-            f"Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']},"
+            f"Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']}," 
             f"Capacidade: {extintor['capacidade']}, Data de Cadastro: {extintor['data_cadastro']}"
         )
-        if st.button(f"Excluir Extintor {i + 1}"):
+        if st.button(f"Excluir Extintor {i+1}"):
             st.session_state['extintores'].pop(i)
             st.success("Extintor removido com sucesso.")
             st.rerun()
