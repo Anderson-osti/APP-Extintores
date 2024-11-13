@@ -23,14 +23,20 @@ def verificar_usuario(username, senha):
     return usuarios_permitidos.get(username) == senha
 
 
+def converter_para_datetime(data):
+    """Converte datetime.date para datetime.datetime"""
+    if isinstance(data, date):
+        return datetime.combine(data, datetime.min.time())  # Converte para datetime com hora 00:00:00
+    return data  # Se já for datetime, retorna sem alteração
+
+
 def cadastrar_empresa(nome_empresa, endereco, cidade, extintores, data_cadastro, usuario_cadastrador):
     db = criar_conexao()
     if db is None:
         return
     try:
-        # Garantir que data_cadastro é datetime.datetime
-        if isinstance(data_cadastro, date):  # Se for datetime.date, converte para datetime.datetime
-            data_cadastro = datetime.combine(data_cadastro, datetime.min.time())
+        # Converter data_cadastro para datetime se for datetime.date
+        data_cadastro = converter_para_datetime(data_cadastro)
 
         empresa = {
             "nome_empresa": nome_empresa,
@@ -54,11 +60,9 @@ def gerar_relatorio_vencimento(data_inicio, data_fim):
         return
     usuario_atual = st.session_state['username']
     try:
-        # Garantir que data_inicio e data_fim são datetime.datetime
-        if isinstance(data_inicio, date):
-            data_inicio = datetime.combine(data_inicio, datetime.min.time())
-        if isinstance(data_fim, date):
-            data_fim = datetime.combine(data_fim, datetime.min.time())
+        # Converter data_inicio e data_fim para datetime se forem datetime.date
+        data_inicio = converter_para_datetime(data_inicio)
+        data_fim = converter_para_datetime(data_fim)
 
         empresas = db.empresas.find({
             "data_cadastro": {"$gte": data_inicio, "$lte": data_fim},
