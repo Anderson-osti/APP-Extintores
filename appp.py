@@ -199,7 +199,7 @@ def tela_cadastro():
 
     # Listas de tipos de extintores e capacidades
     lista_tipos_extintores = ["Pó ABC", "Pó BC", "CÓ2 Dióxido de Carbono", "Água"]
-    lista_capacidades_extintores = ["1kg", "2kg", "5kg", "10kg", "20kg"]
+    lista_capacidades_extintores = ["4kg", "6kg", "8kg", "10kg", "10 Litros"]
 
     tipo_extintor = st.selectbox("Selecione o tipo de extintor", lista_tipos_extintores)
     quantidade_extintor = st.number_input("Quantidade", min_value=1, value=1)
