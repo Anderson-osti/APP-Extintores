@@ -1,6 +1,6 @@
 import streamlit as st
 from pymongo import MongoClient
-from datetime import datetime, date, timedelta
+from datetime import datetime, timedelta, date
 from fpdf import FPDF
 
 
@@ -69,16 +69,15 @@ def gerar_relatorio_vencimento(data_inicio, data_fim):
         data_fim = converter_para_datetime(data_fim)
 
         empresas = db.empresas.find({
-            "data_cadastro": {"$gte": data_inicio, "$lte": data_fim},
             "usuario_cadastrador": usuario_atual
         })
 
         empresas_list = []
         for empresa in empresas:
-            # Filtrar extintores que vencem em 1 ano
+            # Filtrar extintores cujo vencimento está dentro do intervalo selecionado
             extintores_vencendo = [
                 extintor for extintor in empresa['extintores']
-                if (extintor['data_cadastro'] + timedelta(days=365)) <= datetime.now()
+                if data_inicio <= (extintor['data_cadastro'] + timedelta(days=365)) <= data_fim
             ]
 
             if extintores_vencendo:
@@ -93,7 +92,7 @@ def gerar_relatorio_vencimento(data_inicio, data_fim):
         if empresas_list:
             gerar_pdf(empresas_list)
         else:
-            st.write("Nenhuma empresa com extintores vencendo em 1 ano.")
+            st.write("Nenhuma empresa com extintores vencendo no período selecionado.")
     except Exception as e:
         st.error(f"Erro ao gerar relatório: {e}")
 
@@ -132,7 +131,7 @@ def gerar_pdf(empresas):
     pdf_file = "relatorio_vencimento.pdf"
     pdf.output(pdf_file)
     with open(pdf_file, "rb") as file:
-        btn = st.download_button(
+        st.download_button(
             label="Baixar Relatório em PDF",
             data=file,
             file_name=pdf_file,
@@ -225,31 +224,21 @@ def tela_cadastro():
             "data_cadastro": data_cadastro_extintor
         }
         st.session_state['extintores'].append(novo_extintor)
-        st.success("Extintor adicionado com sucesso!")
-    st.subheader("Lista de Extintores Cadastrados")
-    for i, extintor in enumerate(st.session_state.get('extintores', [])):
-        st.write(
-            f"Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']},"
-            f"Capacidade: {extintor['capacidade']}, Data de Cadastro: {extintor['data_cadastro']}"
-        )
-        if st.button(f"Excluir Extintor {i + 1}"):
-            st.session_state['extintores'].pop(i)
-            st.success("Extintor removido com sucesso.")
-            st.rerun()
+        st.success("Extintor adicionado à lista!")
+        st.write(st.session_state['extintores'])
+    usuario_cadastrador = st.session_state['username']
     if st.button("Cadastrar Empresa"):
-        if nome_empresa and endereco and cidade and len(st.session_state.get('extintores', [])) > 0:
-            data_cadastro = datetime.now()
-            usuario_cadastrador = st.session_state['username']
-            cadastrar_empresa(nome_empresa, endereco, cidade, st.session_state['extintores'],
-                              data_cadastro, usuario_cadastrador)
+        if nome_empresa and endereco and cidade:
+            cadastrar_empresa(nome_empresa, endereco, cidade, st.session_state['extintores'], datetime.now(),
+                              usuario_cadastrador)
         else:
-            st.warning("Por favor, preencha todos os campos e adicione um extintor.")
+            st.error("Por favor, preencha todos os campos para cadastrar a empresa.")
 
 
 def tela_relatorio():
     st.header("Gerar Relatório de Vencimento")
-    data_inicio = st.date_input("Data de Início")
-    data_fim = st.date_input("Data de Fim")
+    data_inicio = st.date_input("Data Início", datetime.now())
+    data_fim = st.date_input("Data Fim", datetime.now() + timedelta(days=365))
     if st.button("Gerar Relatório"):
         gerar_relatorio_vencimento(data_inicio, data_fim)
 
@@ -258,33 +247,28 @@ def tela_excluir_empresa():
     st.header("Excluir Empresa")
     empresas = listar_empresas()
     if empresas:
-        nomes_empresas = [empresa['nome_empresa'] for empresa in empresas]
-        empresa_para_excluir = st.selectbox("Selecione a empresa para excluir", nomes_empresas)
-        if st.button("Excluir Empresa"):
+        nome_empresa = st.selectbox("Selecione a empresa para excluir", [empresa['nome_empresa'] for empresa in empresas])
+        if st.button("Excluir"):
             db = criar_conexao()
             if db is None:
                 return
-            try:
-                resultado = db.empresas.delete_one({"nome_empresa": empresa_para_excluir})
-                if resultado.deleted_count > 0:
-                    st.success("Empresa excluída com sucesso!")
-                else:
-                    st.warning("Nenhuma empresa encontrada com o nome selecionado.")
+            empresa = db.empresas.find_one({"nome_empresa": nome_empresa})
+            if empresa:
+                db.empresas.delete_one({"_id": empresa["_id"]})
+                st.success(f"Empresa {nome_empresa} excluída com sucesso.")
                 st.rerun()
-            except Exception as e:
-                st.error(f"Erro ao excluir a empresa: {e}")
+            else:
+                st.error("Empresa não encontrada.")
     else:
         st.warning("Nenhuma empresa cadastrada.")
 
 
+# Função principal para controlar as telas
 def main():
-    if 'logged_in' not in st.session_state:
-        st.session_state['logged_in'] = False
-    if st.session_state['logged_in']:
-        menu_principal()
-        sair_app()
-    else:
+    if 'logged_in' not in st.session_state or not st.session_state['logged_in']:
         tela_login()
+    else:
+        menu_principal()
 
 
 if __name__ == "__main__":
