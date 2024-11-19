@@ -1,6 +1,6 @@
 import streamlit as st
 from pymongo import MongoClient
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from fpdf import FPDF
 
 
@@ -72,11 +72,28 @@ def gerar_relatorio_vencimento(data_inicio, data_fim):
             "data_cadastro": {"$gte": data_inicio, "$lte": data_fim},
             "usuario_cadastrador": usuario_atual
         })
-        empresas_list = list(empresas)
+
+        empresas_list = []
+        for empresa in empresas:
+            # Filtrar extintores que vencem em 1 ano
+            extintores_vencendo = [
+                extintor for extintor in empresa['extintores']
+                if (extintor['data_cadastro'] + timedelta(days=365)) <= datetime.now()
+            ]
+
+            if extintores_vencendo:
+                empresas_list.append({
+                    "nome_empresa": empresa['nome_empresa'],
+                    "endereco": empresa['endereco'],
+                    "cidade": empresa.get('cidade', 'N/A'),
+                    "data_cadastro": empresa['data_cadastro'],
+                    "extintores": extintores_vencendo
+                })
+
         if empresas_list:
             gerar_pdf(empresas_list)
         else:
-            st.write("Nenhuma empresa com extintores próximos do vencimento.")
+            st.write("Nenhuma empresa com extintores vencendo em 1 ano.")
     except Exception as e:
         st.error(f"Erro ao gerar relatório: {e}")
 
