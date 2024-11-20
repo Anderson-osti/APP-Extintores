@@ -2,6 +2,7 @@ import streamlit as st
 from pymongo import MongoClient
 from datetime import datetime, date, timedelta
 from fpdf import FPDF
+import pandas as pd
 
 
 # Função para conectar ao MongoDB
@@ -139,23 +140,37 @@ def gerar_pdf(empresas):
             mime="application/octet-stream"
         )
     st.success("PDF gerado com sucesso!")
-import pandas as pd
+
+
 def listar_empresas():
     db = criar_conexao()
     if db is None:
         return []
+
     usuario_atual = st.session_state['username']
     try:
         empresas = db.empresas.find({"usuario_cadastrador": usuario_atual})
         empresas_list = list(empresas)
+
+        # Verifica se a lista de empresas não está vazia
+        if not empresas_list:
+            st.write("Nenhuma empresa registrada.")
+            return []
+
         # Exibe as empresas em formato de tabela interativa
         df = pd.DataFrame(empresas_list)
-        st.dataframe(df)  # Mostra a tabela de empresas
+
+        # Remove qualquer coluna desnecessária (como ObjectId se existir)
+        if '_id' in df.columns:
+            df = df.drop(columns=['_id'])
+
+        # Exibe apenas a tabela
+        st.dataframe(df)  # Exibe a tabela de empresas
+
         return empresas_list
     except Exception as e:
         st.error(f"Erro ao listar empresas: {e}")
         return []
-
 
 
 def tela_login():
