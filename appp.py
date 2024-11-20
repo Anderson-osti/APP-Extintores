@@ -150,22 +150,17 @@ def listar_empresas():
         empresas = db.empresas.find({"usuario_cadastrador": usuario_atual})
         empresas_list = list(empresas)
 
-        for empresa in empresas_list:
-            st.markdown(f"### {empresa['nome_empresa']}")
-            st.write(f"**Endereço:** {empresa.get('endereco', 'Não informado')}")
-            st.write(f"**Responsável:** {empresa.get('responsavel', 'Não informado')}")
-            st.write(f"**Data de Cadastro:** {empresa.get('data_cadastro', 'Não informado')}")
-
-            # Botões de ação
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button(f"Ver {empresa['nome_empresa']}"):
-                    st.write(f"Detalhes de {empresa['nome_empresa']}")
-            with col2:
-                if st.button(f"Excluir {empresa['nome_empresa']}"):
-                    st.write(f"Empresa {empresa['nome_empresa']} excluída")
-
-            st.write("---")
+        # Dividir a tela em 3 colunas
+        col1, col2, col3 = st.columns(3)
+        for i, empresa in enumerate(empresas_list):
+            # Alterna entre as colunas para distribuir os cards
+            col = [col1, col2, col3][i % 3]  # Alterna entre as 3 colunas
+            with col:
+                st.markdown(f"### {empresa['nome_empresa']}")
+                st.write(f"**Endereço:** {empresa.get('endereco', 'Não informado')}")
+                st.write(f"**Responsável:** {empresa.get('responsavel', 'Não informado')}")
+                st.write(f"**Data de Cadastro:** {empresa.get('data_cadastro', 'Não informado')}")
+                st.write("---")
 
         return empresas_list
     except Exception as e:
