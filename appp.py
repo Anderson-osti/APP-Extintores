@@ -1,38 +1,36 @@
 import streamlit as st
-from datetime import datetime, timedelta
-from fpdf import FPDF
 from pymongo import MongoClient
+from datetime import datetime, date, timedelta
+from fpdf import FPDF
 
 
-# Funções auxiliares
+# Função para conectar ao MongoDB
 def criar_conexao():
     try:
-        client = MongoClient("mongodb://localhost:27017/")
-        db = client['decio_extintores']
+        client = MongoClient(st.secrets["MONGO_URL"])
+        db = client.extintores  # Nome do banco de dados
         return db
     except Exception as e:
-        st.error(f"Erro ao conectar com o banco de dados: {e}")
+        st.error(f"Erro ao conectar ao MongoDB: {e}")
         return None
 
 
-def converter_para_datetime(data):
-    if isinstance(data, datetime):
-        return data
-    return datetime.combine(data, datetime.min.time())
-
-
 def verificar_usuario(username, senha):
-    db = criar_conexao()
-    if db is None:
-        return False
-    usuario = db.usuarios.find_one({"username": username})
-    if usuario and usuario['senha'] == senha:
-        return True
-    return False
+    usuarios_permitidos = {
+        st.secrets["USUARIO1"]: st.secrets["SENHA1"],
+        st.secrets["USUARIO2"]: st.secrets["SENHA2"]
+    }
+    return usuarios_permitidos.get(username) == senha
 
 
-# Funções de cadastro e exclusão
-def cadastrar_empresa(nome_empresa, endereco, cidade, extintores, mangueiras, data_cadastro, usuario_cadastrador):
+def converter_para_datetime(data):
+    """Converte datetime.date para datetime.datetime"""
+    if isinstance(data, date):
+        return datetime.combine(data, datetime.min.time())  # Converte para datetime com hora 00:00:00
+    return data  # Se já for datetime, retorna sem alteração
+
+
+def cadastrar_empresa(nome_empresa, endereco, cidade, extintores, data_cadastro, usuario_cadastrador):
     db = criar_conexao()
     if db is None:
         return
@@ -44,39 +42,20 @@ def cadastrar_empresa(nome_empresa, endereco, cidade, extintores, mangueiras, da
         for extintor in extintores:
             extintor["data_cadastro"] = converter_para_datetime(extintor["data_cadastro"])
 
-        # Converter as datas das mangueiras
-        for mangueira in mangueiras:
-            mangueira["data_cadastro"] = converter_para_datetime(mangueira["data_cadastro"])
-
         empresa = {
             "nome_empresa": nome_empresa,
             "endereco": endereco,
             "cidade": cidade,
             "extintores": extintores,
-            "mangueiras": mangueiras,
             "data_cadastro": data_cadastro,
             "usuario_cadastrador": usuario_cadastrador
         }
         db.empresas.insert_one(empresa)
         st.success("Empresa cadastrada com sucesso!")
         st.session_state['extintores'] = []
-        st.session_state['mangueiras'] = []
         st.rerun()
     except Exception as e:
         st.error(f"Erro ao cadastrar empresa: {e}")
-
-
-def listar_empresas():
-    db = criar_conexao()
-    if db is None:
-        return []
-    usuario_atual = st.session_state['username']
-    try:
-        empresas = db.empresas.find({"usuario_cadastrador": usuario_atual})
-        return list(empresas)
-    except Exception as e:
-        st.error(f"Erro ao listar empresas: {e}")
-        return []
 
 
 def gerar_relatorio_vencimento(data_inicio, data_fim):
@@ -162,7 +141,19 @@ def gerar_pdf(empresas):
     st.success("PDF gerado com sucesso!")
 
 
-# Funções de interação com a interface do usuário
+def listar_empresas():
+    db = criar_conexao()
+    if db is None:
+        return []
+    usuario_atual = st.session_state['username']
+    try:
+        empresas = db.empresas.find({"usuario_cadastrador": usuario_atual})
+        return list(empresas)
+    except Exception as e:
+        st.error(f"Erro ao listar empresas: {e}")
+        return []
+
+
 def tela_login():
     st.image('logo.png', width=100)
     st.title("Login Décio Extintores")
@@ -174,7 +165,6 @@ def tela_login():
         if verificar_usuario(username, senha):
             st.session_state['logged_in'] = True
             st.session_state['extintores'] = []
-            st.session_state['mangueiras'] = []
             st.session_state['username'] = username
             st.success("Login realizado com sucesso!")
             st.rerun()
@@ -187,7 +177,6 @@ def sair_app():
         st.session_state['logged_in'] = False
         st.session_state.pop('username', None)
         st.session_state.pop('extintores', None)
-        st.session_state.pop('mangueiras', None)
         st.success("Logout realizado com sucesso!")
         st.rerun()
 
@@ -221,23 +210,13 @@ def tela_cadastro():
     nome_empresa = st.text_input("Nome da Empresa", key="nome_empresa")
     endereco = st.text_input("Endereço", key="endereco")
     cidade = st.text_input("Cidade", key="cidade")
-
-    # Cadastro de Extintores
     st.subheader("Cadastro de Extintores")
     lista_tipos_extintores = ["Pó ABC", "Pó BC", "CÓ2 Dióxido de Carbono", "Água"]
     lista_capacidades_extintores = ["4kg", "6kg", "8kg", "10kg", "10 Litros"]
     tipo_extintor = st.selectbox("Selecione o tipo de extintor", lista_tipos_extintores)
     quantidade_extintor = st.number_input("Quantidade", min_value=1, value=1)
-    capacidade_extintor = st.selectbox("Selecione a capacidade do extintor", lista_capacidades_extintores)
+    capacidade_extintor = st.selectbox("Selecione a capacidade", lista_capacidades_extintores)
     data_cadastro_extintor = st.date_input("Data de Cadastro do Extintor", datetime.now())
-
-    # Cadastro de Mangueiras
-    st.subheader("Cadastro de Mangueiras de Incêndio")
-    lista_mangueiras = ["15 metros", "20 metros", "25 metros", "30 metros"]
-    tipo_mangueira = st.selectbox("Selecione a quantidade da mangueira", lista_mangueiras)
-    quantidade_mangueira = st.number_input("Quantidade", min_value=1, value=1)
-    data_cadastro_mangueira = st.date_input("Data de Cadastro da Mangueira", datetime.now())
-
     if st.button("Adicionar Extintor"):
         novo_extintor = {
             "tipo": tipo_extintor,
@@ -247,49 +226,32 @@ def tela_cadastro():
         }
         st.session_state['extintores'].append(novo_extintor)
         st.success("Extintor adicionado com sucesso!")
-
-    if st.button("Adicionar Mangueira"):
-        nova_mangueira = {
-            "tipo": tipo_mangueira,
-            "quantidade": quantidade_mangueira,
-            "data_cadastro": data_cadastro_mangueira
-        }
-        if 'mangueiras' not in st.session_state:
-            st.session_state['mangueiras'] = []
-        st.session_state['mangueiras'].append(nova_mangueira)
-        st.success("Mangueira adicionada com sucesso!")
-
     st.subheader("Lista de Extintores Cadastrados")
     for i, extintor in enumerate(st.session_state.get('extintores', [])):
         st.write(
-            f"Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']},"
+            f"Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']}," 
             f" Capacidade: {extintor['capacidade']}, Data de Cadastro: {extintor['data_cadastro']}"
         )
         if st.button(f"Excluir Extintor {i + 1}"):
             st.session_state['extintores'].pop(i)
             st.success("Extintor removido com sucesso.")
             st.rerun()
-
-    st.subheader("Lista de Mangueiras Cadastradas")
-    for i, mangueira in enumerate(st.session_state.get('mangueiras', [])):
-        st.write(
-            f"Tipo: {mangueira['tipo']}, Quantidade: {mangueira['quantidade']},"
-            f" Data de Cadastro: {mangueira['data_cadastro']}"
-        )
-        if st.button(f"Excluir Mangueira {i + 1}"):
-            st.session_state['mangueiras'].pop(i)
-            st.success("Mangueira removida com sucesso.")
-            st.rerun()
-
     if st.button("Cadastrar Empresa"):
-        if nome_empresa and endereco and cidade and (
-                len(st.session_state.get('extintores', [])) > 0 or len(st.session_state.get('mangueiras', [])) > 0):
+        if nome_empresa and endereco and cidade and len(st.session_state.get('extintores', [])) > 0:
             data_cadastro = datetime.now()
             usuario_cadastrador = st.session_state['username']
             cadastrar_empresa(nome_empresa, endereco, cidade, st.session_state['extintores'],
-                              st.session_state['mangueiras'], data_cadastro, usuario_cadastrador)
+                              data_cadastro, usuario_cadastrador)
         else:
-            st.warning("Por favor, preencha todos os campos e adicione ao menos um extintor ou mangueira.")
+            st.warning("Por favor, preencha todos os campos e adicione um extintor.")
+
+
+def tela_relatorio():
+    st.header("Gerar Relatório de Vencimento")
+    data_inicio = st.date_input("Data de Início")
+    data_fim = st.date_input("Data de Fim")
+    if st.button("Gerar Relatório"):
+        gerar_relatorio_vencimento(data_inicio, data_fim)
 
 
 def tela_excluir_empresa():
@@ -315,7 +277,6 @@ def tela_excluir_empresa():
         st.warning("Nenhuma empresa cadastrada.")
 
 
-# Função principal
 def main():
     if 'logged_in' not in st.session_state:
         st.session_state['logged_in'] = False
