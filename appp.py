@@ -210,14 +210,11 @@ def menu_principal():
     elif opcao == "Gerar Relatório de Vencimento":
         tela_relatorio()
     elif opcao == "Listar Empresas Cadastradas":
-        empresas = listar_empresas()
+        empresas = listar_empresas()  # Chama a função para listar empresas em formato de tabela
         if empresas:
             st.header("Empresas Cadastradas")
-            for empresa in empresas:
-                st.write(
-                    f"Nome: {empresa['nome_empresa']}, Endereço: {empresa['endereco']}, "
-                    f"Cidade: {empresa.get('cidade', 'N/A')}, Data de Cadastro: {empresa['data_cadastro']}"
-                )
+            # Já exibido como tabela dentro de 'listar_empresas', então não precisa repetir o st.write abaixo.
+            # Não adicione outro loop com st.write. A tabela é suficiente.
         else:
             st.warning("Nenhuma empresa cadastrada.")
     elif opcao == "Excluir Empresa":
