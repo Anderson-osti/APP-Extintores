@@ -7,11 +7,11 @@ from fpdf import FPDF
 # Função para criar a conexão com o MongoDB
 def criar_conexao():
     try:
-        client = MongoClient("mongodb://localhost:27017/")
-        db = client['decio_extintores']
+        client = MongoClient(st.secrets["MONGO_URL"])
+        db = client.extintores  # Nome do banco de dados
         return db
     except Exception as e:
-        st.error(f"Erro ao conectar ao banco de dados: {e}")
+        st.error(f"Erro ao conectar ao MongoDB: {e}")
         return None
 
 
