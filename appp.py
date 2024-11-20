@@ -30,8 +30,7 @@ def converter_para_datetime(data):
     return data  # Se já for datetime, retorna sem alteração
 
 
-# Função para cadastrar empresa
-def cadastrar_empresa(nome_empresa, endereco, cidade, extintores, mangueiras, data_cadastro, usuario_cadastrador):
+def cadastrar_empresa(nome_empresa, endereco, cidade, extintores, data_cadastro, usuario_cadastrador):
     db = criar_conexao()
     if db is None:
         return
@@ -43,29 +42,22 @@ def cadastrar_empresa(nome_empresa, endereco, cidade, extintores, mangueiras, da
         for extintor in extintores:
             extintor["data_cadastro"] = converter_para_datetime(extintor["data_cadastro"])
 
-        # Converter as mangueiras
-        for mangueira in mangueiras:
-            mangueira["data_cadastro"] = converter_para_datetime(mangueira["data_cadastro"])
-
         empresa = {
             "nome_empresa": nome_empresa,
             "endereco": endereco,
             "cidade": cidade,
             "extintores": extintores,
-            "mangueiras": mangueiras,
             "data_cadastro": data_cadastro,
             "usuario_cadastrador": usuario_cadastrador
         }
         db.empresas.insert_one(empresa)
         st.success("Empresa cadastrada com sucesso!")
         st.session_state['extintores'] = []
-        st.session_state['mangueiras'] = []
         st.rerun()
     except Exception as e:
         st.error(f"Erro ao cadastrar empresa: {e}")
 
 
-# Função para gerar o relatório de vencimento
 def gerar_relatorio_vencimento(data_inicio, data_fim):
     db = criar_conexao()
     if db is None:
@@ -82,42 +74,35 @@ def gerar_relatorio_vencimento(data_inicio, data_fim):
 
         empresas_list = []
         for empresa in empresas:
-            # Filtrar extintores e mangueiras cujo vencimento está dentro do intervalo selecionado
+            # Filtrar extintores cujo vencimento está dentro do intervalo selecionado
             extintores_vencendo = [
                 extintor for extintor in empresa['extintores']
                 if (extintor['data_cadastro'] + timedelta(days=365)) >= data_inicio and
                    (extintor['data_cadastro'] + timedelta(days=365)) <= data_fim
             ]
-            mangueiras_vencendo = [
-                mangueira for mangueira in empresa['mangueiras']
-                if (mangueira['data_cadastro'] + timedelta(days=365)) >= data_inicio and
-                   (mangueira['data_cadastro'] + timedelta(days=365)) <= data_fim
-            ]
 
-            if extintores_vencendo or mangueiras_vencendo:
+            if extintores_vencendo:
                 empresas_list.append({
                     "nome_empresa": empresa['nome_empresa'],
                     "endereco": empresa['endereco'],
                     "cidade": empresa.get('cidade', 'N/A'),
                     "data_cadastro": empresa['data_cadastro'],
-                    "extintores": extintores_vencendo,
-                    "mangueiras": mangueiras_vencendo
+                    "extintores": extintores_vencendo
                 })
 
         if empresas_list:
             gerar_pdf(empresas_list)
         else:
-            st.write("Nenhuma empresa com extintores ou mangueiras vencendo no período selecionado.")
+            st.write("Nenhuma empresa com extintores vencendo no período selecionado.")
     except Exception as e:
         st.error(f"Erro ao gerar relatório: {e}")
 
 
-# Função para gerar o PDF
 def gerar_pdf(empresas):
     class PDF(FPDF):
         def header(self):
             self.set_font('Arial', 'B', 12)
-            self.cell(0, 10, 'Relatório de Vencimento de Extintores e Mangueiras', 0, 1, 'C')
+            self.cell(0, 10, 'Relatório de Vencimento de Extintores', 0, 1, 'C')
             self.ln(10)
 
         def footer(self):
@@ -144,14 +129,6 @@ def gerar_pdf(empresas):
                 f"  Data de Cadastro: {extintor['data_cadastro']} | "
             )
             pdf.cell(0, 10, linha_extintor, 0, 1)
-        for mangueira in empresa.get('mangueiras', []):
-            linha_mangueira = (
-                f"  Tipo: {mangueira['tipo']} | "
-                f"  Quantidade: {mangueira['quantidade']} | "
-                f"  Comprimento: {mangueira['comprimento']} | "
-                f"  Data de Cadastro: {mangueira['data_cadastro']} | "
-            )
-            pdf.cell(0, 10, linha_mangueira, 0, 1)
     pdf_file = "relatorio_vencimento.pdf"
     pdf.output(pdf_file)
     with open(pdf_file, "rb") as file:
@@ -164,7 +141,6 @@ def gerar_pdf(empresas):
     st.success("PDF gerado com sucesso!")
 
 
-# Função para listar as empresas cadastradas
 def listar_empresas():
     db = criar_conexao()
     if db is None:
@@ -178,7 +154,6 @@ def listar_empresas():
         return []
 
 
-# Função para a tela de login
 def tela_login():
     st.image('logo.png', width=100)
     st.title("Login Décio Extintores")
@@ -190,7 +165,6 @@ def tela_login():
         if verificar_usuario(username, senha):
             st.session_state['logged_in'] = True
             st.session_state['extintores'] = []
-            st.session_state['mangueiras'] = []
             st.session_state['username'] = username
             st.success("Login realizado com sucesso!")
             st.rerun()
@@ -198,18 +172,15 @@ def tela_login():
             st.error("Usuário ou senha incorretos.")
 
 
-# Função para sair do aplicativo
 def sair_app():
     if st.button("Sair do App"):
         st.session_state['logged_in'] = False
         st.session_state.pop('username', None)
         st.session_state.pop('extintores', None)
-        st.session_state.pop('mangueiras', None)
         st.success("Logout realizado com sucesso!")
         st.rerun()
 
 
-# Função para o menu principal
 def menu_principal():
     st.sidebar.title("Menu")
     opcao = st.sidebar.selectbox("Escolha uma opção", ["Cadastro de Empresa", "Gerar Relatório de Vencimento",
@@ -234,13 +205,11 @@ def menu_principal():
         tela_excluir_empresa()
 
 
-# Função para cadastro de empresa
 def tela_cadastro():
     st.header("Cadastro de Empresa")
     nome_empresa = st.text_input("Nome da Empresa", key="nome_empresa")
     endereco = st.text_input("Endereço", key="endereco")
     cidade = st.text_input("Cidade", key="cidade")
-
     st.subheader("Cadastro de Extintores")
     lista_tipos_extintores = ["Pó ABC", "Pó BC", "CÓ2 Dióxido de Carbono", "Água"]
     lista_capacidades_extintores = ["4kg", "6kg", "8kg", "10kg", "10 Litros"]
@@ -248,7 +217,6 @@ def tela_cadastro():
     quantidade_extintor = st.number_input("Quantidade", min_value=1, value=1)
     capacidade_extintor = st.selectbox("Selecione a capacidade", lista_capacidades_extintores)
     data_cadastro_extintor = st.date_input("Data de Cadastro do Extintor", datetime.now())
-
     if st.button("Adicionar Extintor"):
         novo_extintor = {
             "tipo": tipo_extintor,
@@ -258,55 +226,26 @@ def tela_cadastro():
         }
         st.session_state['extintores'].append(novo_extintor)
         st.success("Extintor adicionado com sucesso!")
-
-    st.subheader("Cadastro de Mangueiras")
-    lista_comprimento_mangueiras = ["15m", "20m", "25m", "30m"]
-    comprimento_mangueira = st.selectbox("Selecione o comprimento da mangueira", lista_comprimento_mangueiras)
-    quantidade_mangueira = st.number_input("Quantidade", min_value=1, value=1)
-    data_cadastro_mangueira = st.date_input("Data de Cadastro da Mangueira", datetime.now())
-
-    if st.button("Adicionar Mangueira"):
-        nova_mangueira = {
-            "comprimento": comprimento_mangueira,
-            "quantidade": quantidade_mangueira,
-            "data_cadastro": data_cadastro_mangueira
-        }
-        st.session_state['mangueiras'].append(nova_mangueira)
-        st.success("Mangueira adicionada com sucesso!")
-
     st.subheader("Lista de Extintores Cadastrados")
     for i, extintor in enumerate(st.session_state.get('extintores', [])):
         st.write(
-            f"Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']},"
+            f"Tipo: {extintor['tipo']}, Quantidade: {extintor['quantidade']}," 
             f" Capacidade: {extintor['capacidade']}, Data de Cadastro: {extintor['data_cadastro']}"
         )
         if st.button(f"Excluir Extintor {i + 1}"):
             st.session_state['extintores'].pop(i)
             st.success("Extintor removido com sucesso.")
             st.rerun()
-
-    st.subheader("Lista de Mangueiras Cadastradas")
-    for i, mangueira in enumerate(st.session_state.get('mangueiras', [])):
-        st.write(
-            f"Comprimento: {mangueira['comprimento']}, Quantidade: {mangueira['quantidade']},"
-            f" Data de Cadastro: {mangueira['data_cadastro']}"
-        )
-        if st.button(f"Excluir Mangueira {i + 1}"):
-            st.session_state['mangueiras'].pop(i)
-            st.success("Mangueira removida com sucesso.")
-            st.rerun()
-
     if st.button("Cadastrar Empresa"):
         if nome_empresa and endereco and cidade and len(st.session_state.get('extintores', [])) > 0:
             data_cadastro = datetime.now()
             usuario_cadastrador = st.session_state['username']
             cadastrar_empresa(nome_empresa, endereco, cidade, st.session_state['extintores'],
-                              st.session_state['mangueiras'], data_cadastro, usuario_cadastrador)
+                              data_cadastro, usuario_cadastrador)
         else:
-            st.warning("Por favor, preencha todos os campos e adicione um extintor ou mangueira.")
+            st.warning("Por favor, preencha todos os campos e adicione um extintor.")
 
 
-# Função para gerar o relatório de vencimento
 def tela_relatorio():
     st.header("Gerar Relatório de Vencimento")
     data_inicio = st.date_input("Data de Início")
@@ -315,7 +254,6 @@ def tela_relatorio():
         gerar_relatorio_vencimento(data_inicio, data_fim)
 
 
-# Função para excluir empresa
 def tela_excluir_empresa():
     st.header("Excluir Empresa")
     empresas = listar_empresas()
@@ -339,7 +277,6 @@ def tela_excluir_empresa():
         st.warning("Nenhuma empresa cadastrada.")
 
 
-# Função principal
 def main():
     if 'logged_in' not in st.session_state:
         st.session_state['logged_in'] = False
