@@ -139,8 +139,7 @@ def gerar_pdf(empresas):
             mime="application/octet-stream"
         )
     st.success("PDF gerado com sucesso!")
-
-
+import pandas as pd
 def listar_empresas():
     db = criar_conexao()
     if db is None:
@@ -149,23 +148,14 @@ def listar_empresas():
     try:
         empresas = db.empresas.find({"usuario_cadastrador": usuario_atual})
         empresas_list = list(empresas)
-
-        # Dividir a tela em 3 colunas
-        col1, col2, col3 = st.columns(3)
-        for i, empresa in enumerate(empresas_list):
-            # Alterna entre as colunas para distribuir os cards
-            col = [col1, col2, col3][i % 3]  # Alterna entre as 3 colunas
-            with col:
-                st.markdown(f"### {empresa['nome_empresa']}")
-                st.write(f"**Endereço:** {empresa.get('endereco', 'Não informado')}")
-                st.write(f"**Responsável:** {empresa.get('responsavel', 'Não informado')}")
-                st.write(f"**Data de Cadastro:** {empresa.get('data_cadastro', 'Não informado')}")
-                st.write("---")
-
+        # Exibe as empresas em formato de tabela interativa
+        df = pd.DataFrame(empresas_list)
+        st.dataframe(df)  # Mostra a tabela de empresas
         return empresas_list
     except Exception as e:
         st.error(f"Erro ao listar empresas: {e}")
         return []
+
 
 
 def tela_login():
